@@ -97,6 +97,18 @@ int main()
 		}
 		gdTestErrorMsg("perceptual diff changed %u pixels (threshold=0.10)\n", result.pixels_changed);
 		error = 1;
+		FILE *f;
+		f = fopen("/tmp/gd_test_ref.png", "wb");
+		gdImagePng(buf_diff, f);
+		fclose(f);
+
+		f = fopen("/tmp/gd_test_out.png", "wb");
+		gdImagePng(ref, f);
+		fclose(f);
+
+		f = fopen("/tmp/gd_test_out.png", "wb");
+		gdImagePng(im, f);
+		fclose(f);
 	}
 done:
 	if (buf_diff) {
