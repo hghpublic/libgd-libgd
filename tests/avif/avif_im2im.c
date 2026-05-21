@@ -14,7 +14,7 @@
 int main()
 {
 	gdImagePtr srcGdIm = NULL, destGdIm = NULL;
-	void *avifImageDataPtr;
+	void *avifImageDataPtr = NULL;
 	FILE *fp;
 	int r, g, b;
 	int size = 0;
@@ -33,6 +33,7 @@ int main()
 
 	// Encode the gd image to a test AVIF file.
 	fp = gdTestTempFp();
+	if (!gdTestAssertMsg(fp != NULL, "could not create temp file\n")) goto exit;
 	gdImageAvif(srcGdIm, fp);
 	fclose(fp);
 
@@ -47,6 +48,7 @@ int main()
 
 	// Encode that gd image to a test AVIF file.
 	fp = gdTestTempFp();
+	if (!gdTestAssertMsg(fp != NULL, "could not create temp file\n")) goto exit;
 	gdImageAvif(destGdIm, fp);
 	fclose(fp);
 
