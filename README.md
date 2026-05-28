@@ -1,6 +1,5 @@
 # GD Graphics (Draw) Library
-[![Build Status](https://scan.coverity.com/projects/3810/badge.svg)](https://scan.coverity.com/projects/libgd)
-[![Chat](https://badges.gitter.im/libgd/libgd.svg)](https://gitter.im/libgd/libgd)
+[![CI build and test](https://github.com/libgd/libgd/actions/workflows/ci.yml/badge.svg)](https://github.com/libgd/libgd/actions/workflows/ci.yml)
 [![codecov.io](https://codecov.io/github/libgd/libgd/coverage.svg?branch=master)](https://codecov.io/github/libgd/libgd/)
 
 GD is an open source code library for the dynamic creation of images by
