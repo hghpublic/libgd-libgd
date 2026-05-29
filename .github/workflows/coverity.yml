@@ -4,12 +4,13 @@
 # https://scan.coverity.com/projects/libgd
 name: Coverity Scan
 
-# Only want to analyze official releases, not any pull requests.
-# The free service doesn't have enough bandwidth for both.
 on:
   workflow_call:
-  push:
-    branches: [master, GD-*]
+    secrets:
+      COVERITY_SCAN_EMAIL:
+        required: true
+      COVERITY_SCAN_TOKEN:
+        required: true
 
 permissions: 
   contents: read
@@ -55,7 +56,9 @@ jobs:
           -DENABLE_WEBP=1 \
           -DBUILD_TEST=1 \
           -B ${{github.workspace}}/build
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
+    - name: Coverity Scan
+      uses: vapier/coverity-scan-action@v1
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+        token: ${{ secrets.COVERITY_SCAN_TOKEN }}
+        command: cmake --build ${{github.workspace}}/build

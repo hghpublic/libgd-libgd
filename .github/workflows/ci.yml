@@ -15,7 +15,9 @@ permissions:
 
 jobs:
   coverity:
+    if: github.event_name == 'push'
     uses: ./.github/workflows/coverity.yml
+    secrets: inherit
   ubuntu:
     uses: ./.github/workflows/ci_ubuntu.yml
   windows:
