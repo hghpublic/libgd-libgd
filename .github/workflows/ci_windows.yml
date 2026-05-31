@@ -78,7 +78,7 @@ jobs:
           -DBUILD_TEST=1
           -B ${{github.workspace}}/build
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-          -DCMAKE_PREFIX_PATH=${{github.workspace}}\libultrahdr-install
+          "-DCMAKE_PREFIX_PATH=${{github.workspace}}\vcpkgusr\${{matrix.vcpkg_triplet}};${{github.workspace}}\libultrahdr-install"
           "-DCMAKE_LIBRARY_PATH=${{github.workspace}}\vcpkgusr\${{matrix.vcpkg_triplet}}\lib;${{github.workspace}}\libultrahdr-install\lib"
           "-DCMAKE_INCLUDE_PATH=${{github.workspace}}\vcpkgusr\${{matrix.vcpkg_triplet}}\include;${{github.workspace}}\libultrahdr-install\include"
 
