@@ -806,17 +806,9 @@ BGD_DECLARE(int) gdUhdrImageCtx(gdUhdrImagePtr im, gdIOCtxPtr ctx, int format, i
 	uhdr_codec_private_t *enc;
 	uhdr_compressed_image_t source;
 	uhdr_error_info_t rc;
-	uhdr_mem_block_t *base;
-	uhdr_mem_block_t *gain;
-	uhdr_gainmap_metadata_t *meta;
-	uhdr_mem_block_t *exif;
-	uhdr_compressed_image_t base_image;
-	uhdr_compressed_image_t gain_image;
-	uhdr_mem_block_t exif_block;
 	uhdr_compressed_image_t *encoded;
 	uhdr_raw_image_t raw_sdr;
 	uhdr_raw_image_t raw_hdr;
-	int use_raw_intents;
 	int write_result;
 
 	if (!im || !ctx || !im->blob || im->blob_size <= 0) {
@@ -834,9 +826,19 @@ BGD_DECLARE(int) gdUhdrImageCtx(gdUhdrImagePtr im, gdIOCtxPtr ctx, int format, i
 		return GD_UHDR_E_INVALID;
 	}
 
+	if (im->op_count == 0) {
+		write_result = gdPutBuf(im->blob, im->blob_size, ctx);
+		if (write_result != im->blob_size) {
+			gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0, "Failed to write UltraHDR output");
+			return GD_UHDR_E_ENCODE;
+		}
+
+		gdUhdrSetError(err, GD_UHDR_SUCCESS, 0, NULL);
+		return GD_UHDR_SUCCESS;
+	}
+
 	memset(&raw_sdr, 0, sizeof(raw_sdr));
 	memset(&raw_hdr, 0, sizeof(raw_hdr));
-	use_raw_intents = im->op_count > 0;
 
 	dec = uhdr_create_decoder();
 	enc = uhdr_create_encoder();
@@ -874,7 +876,7 @@ BGD_DECLARE(int) gdUhdrImageCtx(gdUhdrImagePtr im, gdIOCtxPtr ctx, int format, i
 		return GD_UHDR_E_DECODE;
 	}
 
-	if (use_raw_intents) {
+	{
 		int status;
 
 		status = gdUhdrDecodeRawIntent(im, UHDR_IMG_FMT_32bppRGBA8888, UHDR_CT_SRGB, &raw_sdr, err);
@@ -895,66 +897,26 @@ BGD_DECLARE(int) gdUhdrImageCtx(gdUhdrImagePtr im, gdIOCtxPtr ctx, int format, i
 		}
 		raw_hdr.ct = UHDR_CT_PQ;
 		raw_hdr.range = UHDR_CR_FULL_RANGE;
+	}
 
-		rc = uhdr_enc_set_raw_image(enc, &raw_hdr, UHDR_HDR_IMG);
-		if (rc.error_code != UHDR_CODEC_OK) {
-			gdUhdrSetError(err, GD_UHDR_E_ENCODE, rc.error_code, rc.has_detail ? rc.detail : "uhdr_enc_set_raw_image(HDR) failed");
-			gdUhdrFreeCopiedRawImage(&raw_hdr);
-			gdUhdrFreeCopiedRawImage(&raw_sdr);
-			uhdr_release_encoder(enc);
-			uhdr_release_decoder(dec);
-			return GD_UHDR_E_ENCODE;
-		}
+	rc = uhdr_enc_set_raw_image(enc, &raw_hdr, UHDR_HDR_IMG);
+	if (rc.error_code != UHDR_CODEC_OK) {
+		gdUhdrSetError(err, GD_UHDR_E_ENCODE, rc.error_code, rc.has_detail ? rc.detail : "uhdr_enc_set_raw_image(HDR) failed");
+		gdUhdrFreeCopiedRawImage(&raw_hdr);
+		gdUhdrFreeCopiedRawImage(&raw_sdr);
+		uhdr_release_encoder(enc);
+		uhdr_release_decoder(dec);
+		return GD_UHDR_E_ENCODE;
+	}
 
-		rc = uhdr_enc_set_raw_image(enc, &raw_sdr, UHDR_SDR_IMG);
-		if (rc.error_code != UHDR_CODEC_OK) {
-			gdUhdrSetError(err, GD_UHDR_E_ENCODE, rc.error_code, rc.has_detail ? rc.detail : "uhdr_enc_set_raw_image(SDR) failed");
-			gdUhdrFreeCopiedRawImage(&raw_hdr);
-			gdUhdrFreeCopiedRawImage(&raw_sdr);
-			uhdr_release_encoder(enc);
-			uhdr_release_decoder(dec);
-			return GD_UHDR_E_ENCODE;
-		}
-	} else {
-		base = uhdr_dec_get_base_image(dec);
-		gain = uhdr_dec_get_gainmap_image(dec);
-		meta = uhdr_dec_get_gainmap_metadata(dec);
-		if (!base || !gain || !meta) {
-			gdUhdrSetError(err, GD_UHDR_E_DECODE, 0, "Decoded stream is missing base image, gain map, or metadata");
-			uhdr_release_encoder(enc);
-			uhdr_release_decoder(dec);
-			return GD_UHDR_E_DECODE;
-		}
-
-		base_image.data = base->data;
-		base_image.data_sz = base->data_sz;
-		base_image.capacity = base->data_sz;
-		base_image.cg = UHDR_CG_UNSPECIFIED;
-		base_image.ct = UHDR_CT_UNSPECIFIED;
-		base_image.range = UHDR_CR_FULL_RANGE;
-
-		gain_image.data = gain->data;
-		gain_image.data_sz = gain->data_sz;
-		gain_image.capacity = gain->data_sz;
-		gain_image.cg = UHDR_CG_UNSPECIFIED;
-		gain_image.ct = UHDR_CT_UNSPECIFIED;
-		gain_image.range = UHDR_CR_FULL_RANGE;
-
-		rc = uhdr_enc_set_compressed_image(enc, &base_image, UHDR_BASE_IMG);
-		if (rc.error_code != UHDR_CODEC_OK) {
-			gdUhdrSetError(err, GD_UHDR_E_ENCODE, rc.error_code, rc.has_detail ? rc.detail : "uhdr_enc_set_compressed_image failed");
-			uhdr_release_encoder(enc);
-			uhdr_release_decoder(dec);
-			return GD_UHDR_E_ENCODE;
-		}
-
-		rc = uhdr_enc_set_gainmap_image(enc, &gain_image, meta);
-		if (rc.error_code != UHDR_CODEC_OK) {
-			gdUhdrSetError(err, GD_UHDR_E_ENCODE, rc.error_code, rc.has_detail ? rc.detail : "uhdr_enc_set_gainmap_image failed");
-			uhdr_release_encoder(enc);
-			uhdr_release_decoder(dec);
-			return GD_UHDR_E_ENCODE;
-		}
+	rc = uhdr_enc_set_raw_image(enc, &raw_sdr, UHDR_SDR_IMG);
+	if (rc.error_code != UHDR_CODEC_OK) {
+		gdUhdrSetError(err, GD_UHDR_E_ENCODE, rc.error_code, rc.has_detail ? rc.detail : "uhdr_enc_set_raw_image(SDR) failed");
+		gdUhdrFreeCopiedRawImage(&raw_hdr);
+		gdUhdrFreeCopiedRawImage(&raw_sdr);
+		uhdr_release_encoder(enc);
+		uhdr_release_decoder(dec);
+		return GD_UHDR_E_ENCODE;
 	}
 
 	rc = uhdr_enc_set_quality(enc, quality, UHDR_BASE_IMG);
@@ -973,32 +935,12 @@ BGD_DECLARE(int) gdUhdrImageCtx(gdUhdrImagePtr im, gdIOCtxPtr ctx, int format, i
 		return GD_UHDR_E_ENCODE;
 	}
 
-	exif = uhdr_dec_get_exif(dec);
-	if (exif && exif->data && exif->data_sz > 0) {
-		exif_block.data = exif->data;
-		exif_block.data_sz = exif->data_sz;
-		exif_block.capacity = exif->data_sz;
-		rc = uhdr_enc_set_exif_data(enc, &exif_block);
-		if (rc.error_code != UHDR_CODEC_OK) {
-			gdUhdrSetError(err, GD_UHDR_E_ENCODE, rc.error_code, rc.has_detail ? rc.detail : "uhdr_enc_set_exif_data failed");
-			uhdr_release_encoder(enc);
-			uhdr_release_decoder(dec);
-			return GD_UHDR_E_ENCODE;
-		}
-	}
-
 	rc = uhdr_enc_set_output_format(enc, UHDR_CODEC_JPG);
 	if (rc.error_code != UHDR_CODEC_OK) {
 		gdUhdrSetError(err, GD_UHDR_E_ENCODE, rc.error_code, rc.has_detail ? rc.detail : "uhdr_enc_set_output_format failed");
 		uhdr_release_encoder(enc);
 		uhdr_release_decoder(dec);
 		return GD_UHDR_E_ENCODE;
-	}
-
-	if (!use_raw_intents && gdUhdrApplyOps(enc, im, err) != GD_UHDR_SUCCESS) {
-		uhdr_release_encoder(enc);
-		uhdr_release_decoder(dec);
-		return GD_UHDR_E_INVALID;
 	}
 
 	rc = uhdr_encode(enc);
