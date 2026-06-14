@@ -32,6 +32,13 @@
 #include "gdhelpers.h"
 #include "gd_errors.h"
 #include "bmp.h"
+#if defined(__has_builtin) && __has_builtin(__builtin_assume)
+#  define GD_ASSUME(expr) __builtin_assume(expr)
+#elif defined(__GNUC__)
+#  define GD_ASSUME(expr) do { if (!(expr)) __builtin_unreachable(); } while (0)
+#else
+#  define GD_ASSUME(expr) ((void)(expr))
+#endif
 
 static int compress_row(unsigned char *uncompressed_row, int length);
 static int build_rle_packet(unsigned char *row, int packet_type, int length, unsigned char *data);
@@ -369,6 +376,8 @@ static int _gdImageBmpCtx(gdImagePtr im, gdIOCtxPtr out, int bpp, int compressio
 	if (im == NULL || out == NULL) {
 		return 1;
 	}
+
+
 
 	if (bmp_prepare_write_image(im, bpp, flags, &write_im)) {
 		return 1;
@@ -948,7 +957,7 @@ static int compress_row(unsigned char *row, int length)
 	int compressed_length = 0;
 	int pixel = 0, compressed_run = 0, rle_compression = 0;
 	unsigned char *uncompressed_row = NULL, *uncompressed_rowp = NULL, *uncompressed_start = NULL;
-
+	GD_ASSUME(length > 0);
 	uncompressed_row = (unsigned char *) gdMalloc(length);
 	if (!uncompressed_row) {
 		return -1;
