@@ -113,7 +113,7 @@ int gdGetWordLSB(signed short int *result, gdIOCtx *ctx)
 
 int gdGetInt(int *result, gdIOCtx *ctx)
 {
-	unsigned int r;
+	int r;
 
 	r = (ctx->getC)(ctx);
 	if(r == EOF) {
@@ -148,7 +148,7 @@ int gdGetInt(int *result, gdIOCtx *ctx)
 
 int gdGetIntLSB(signed int *result, gdIOCtx *ctx)
 {
-	unsigned int c;
+	int c;
 	unsigned int r = 0;
 
 	c = (ctx->getC) (ctx);

@@ -210,7 +210,7 @@ BGD_DECLARE(gdImagePtr) gdImageCropThreshold(gdImagePtr im, const unsigned int c
 		return NULL;
 	}
 
-	if (!gdImageTrueColor(im) && color >= gdImageColorsTotal(im)) {
+	if (!gdImageTrueColor(im) && color >= (unsigned int)gdImageColorsTotal(im)) {
 		return NULL;
 	}
 

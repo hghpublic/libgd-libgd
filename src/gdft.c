@@ -263,7 +263,7 @@ extern int any2eucjp (char *, const char *, unsigned int);
 /* Fonts can be used across multiple images */
 
 /* 2.0.16: thread safety (the font cache is shared) */
-static gdMutexDeclare (gdFontCacheMutex);
+gdMutexDeclare (gdFontCacheMutex);
 static gdCache_head_t *fontCache;
 static FT_Library library;
 
@@ -445,7 +445,7 @@ typedef struct {
 } glyphInfo;
 
 static ssize_t
-textLayout(uint32_t *text, int len,
+textLayout(uint32_t *text, size_t len,
 		FT_Face face, gdFTStringExtraPtr strex,
 		glyphInfo **glyph_info)
 {
@@ -536,7 +536,10 @@ textLayout(uint32_t *text, int len,
 #endif
 
 	*glyph_info = info;
-	return count <= SSIZE_MAX ? count : -1;
+	if (count <= (size_t)SSIZE_MAX) {
+		return (ssize_t)count;
+	}
+	return -1;
 }
 
 /********************************************************************/
@@ -735,7 +738,9 @@ gdft_draw_bitmap (gdCache_head_t *tc_cache, gdImagePtr im, int fg,
 	unsigned char *pixel = NULL;
 	int *tpixel = NULL;
 	int opixel;
-	int x, y, row, col, pc, pcr;
+	int x, y, pc, pcr;
+	unsigned int col;
+	unsigned int row;
 
 	tweencolor_t *tc_elem;
 	tweencolorkey_t tc_key;

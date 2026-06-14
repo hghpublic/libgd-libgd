@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "gd.h"
 #include "gd_errors.h"
+#include "gd_intern.h"
 
 /* JCE: Arrange HAVE_LIBPNG so that it can be set in gd.h */
 #ifdef HAVE_LIBPNG
@@ -285,7 +286,7 @@ gdPngErrorHandler (png_structp png_ptr, png_const_charp msg)
 	longjmp (jmpbuf_ptr->jmpbuf, 1);
 }
 
-static void gdPngWarningHandler (png_structp png_ptr, png_const_charp msg)
+static void gdPngWarningHandler (UNUSED_PARAM(png_structp png_ptr), png_const_charp msg)
 {
 	gd_error_ex(GD_WARNING, "gd-png: libpng warning: %s", msg);
 }

@@ -36,7 +36,13 @@
 #define MINSSIZE_T ((SSIZE_T)~MAXSSIZE_T)
 #define SSIZE_MAX MAXSSIZE_T
 #endif
-
+#if defined(_MSC_VER)
+    #define UNUSED_PARAM(x) x /* MSVC naturally accepts the (void)x trick or UNREFERENCED_PARAMETER */
+#elif defined(__GNUC__) || defined(__clang__)
+    #define UNUSED_PARAM(x) x __attribute__((unused))
+#else
+    #define UNUSED_PARAM(x) x
+#endif
 #include "gd.h"
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
