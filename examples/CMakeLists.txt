@@ -13,7 +13,7 @@ if (PNG_FOUND)
 		curvedrectangle curveto fillandstroke
 		gradient_art gradient_operators composite_operators
 		save_restore
-		path_arcfillimage path_imagesource path_pattern
+		path_api path_arcfillimage path_imagesource path_pattern
 		patharc pathclip pathnegativearc
 		smiley smileylarge tiger tigerclipped
 		gif_frames tgaread

@@ -140,8 +140,8 @@ static gdPathPtr make_curve_path(void)
 static gdPathPtr make_multi_contour(void)
 {
     gdPathPtr path = gdPathCreate();
-    gdPathAddRectangle(path, 5, 5, 70, 70);
-    gdPathAddRectangle(path, 20, 20, 40, 40);
+    gdPathRectangle(path, 5, 5, 70, 70);
+    gdPathRectangle(path, 20, 20, 40, 40);
     gdPathMoveTo(path, 10, 40);
     gdPathLineTo(path, 70, 10);
     gdPathLineTo(path, 70, 70);

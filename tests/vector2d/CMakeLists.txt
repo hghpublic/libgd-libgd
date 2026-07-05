@@ -1,7 +1,8 @@
-SET(TESTS_FILES image_context matrix)
+SET(TESTS_FILES image_context matrix path_public)
 ADD_GD_TESTS()
 SET_TESTS_PROPERTIES(test_vector2d_image_context PROPERTIES LABELS "vector2d-public")
 SET_TESTS_PROPERTIES(test_vector2d_matrix PROPERTIES LABELS "vector2d-public")
+SET_TESTS_PROPERTIES(test_vector2d_path_public PROPERTIES LABELS "vector2d-public")
 
 IF(ENABLE_PNG)
 	ADD_EXECUTABLE(test_vector2d_gd_operators gd_operators.c)

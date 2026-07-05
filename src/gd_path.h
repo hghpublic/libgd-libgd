@@ -30,25 +30,15 @@ static inline int _doubleIsZero(double f)
 
 gdPaintPtr gdPaintCreateRgba(double r, double g, double b, double a);
 gdPaintPtr gdPaintAddRef(gdPaintPtr paint);
-BGD_DECLARE(void) gdPaintDestroy(gdPaintPtr paint);
-BGD_DECLARE(void) gdContextSetSource(gdContextPtr context, gdPaintPtr source);
 
 gdStatePtr gdStateCreate();
 void gdStateDestroy(gdStatePtr state);
 
-gdPathPtr gdPathDuplicate(const gdPathPtr path);
 gdPathPtr gdPathDuplicateFlattened(const gdPathPtr path);
 void gdPathClear(gdPathPtr path);
 
 gdPaintPtr gdPaintCreateForSurface(gdSurfacePtr surface);
 gdPathPatternPtr gdPaintGetPattern(const gdPaintPtr paint);
-BGD_DECLARE(void) gdPathPatternSetMatrix(gdPathPatternPtr pattern, gdPathMatrixPtr matrix);
 void gdPaintSetSourceSurface(gdContextPtr context, gdSurfacePtr surface, double x, double y);
-BGD_DECLARE(void) gdPathPatternDestroy(gdPathPatternPtr pattern);
-
-void gdPathArcTo(gdPathPtr path, double x1, double y1, double x2, double y2, double radius);
-void gdPathAddRectangle(gdPathPtr path, double x, double y, double w, double h);
-
-void gdPathAddArc(gdPathPtr path, double cx, double cy, double radius, double angle1, double angle2, int ccw);
 void gdPathDumpPathTransform(const gdPathPtr path, const gdPathMatrixPtr matrix);
 #endif // GD_PATH_H

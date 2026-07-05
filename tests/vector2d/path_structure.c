@@ -96,6 +96,72 @@ static void test_relative_path_operations(void)
     gdPathDestroy(path);
 }
 
+static void test_public_path_helpers(void)
+{
+    gdPathPtr empty = gdPathCreate();
+    gdPathPtr empty_copy = gdPathDuplicate(empty);
+    gdPathPtr path = gdPathCreate();
+    gdPathPtr copy;
+
+    gdTestAssert(empty_copy != NULL);
+    gdTestAssert(gdArrayNumElements(&empty_copy->elements) == 0);
+    gdTestAssert(gdPathDuplicate(NULL) == NULL);
+
+    gdPathRectangle(path, 2, 3, 10, 20);
+    gdTestAssert(path->contours == 1);
+    gdTestAssert(gdArrayNumElements(&path->elements) == 6);
+    gdTestAssert(op_at(path, 5) == gdPathOpsClose);
+    assert_point(path, 0, 2, 3);
+    assert_point(path, 2, 12, 23);
+
+    copy = gdPathDuplicate(path);
+    gdTestAssert(copy != NULL);
+    gdPathLineTo(copy, 99, 100);
+    gdTestAssert(gdArrayNumElements(&path->elements) == 6);
+    gdTestAssert(gdArrayNumElements(&copy->elements) == 7);
+    assert_point(path, 0, 2, 3);
+    assert_point(copy, 0, 2, 3);
+
+    gdPathDestroy(copy);
+    gdPathDestroy(path);
+    gdPathDestroy(empty_copy);
+    gdPathDestroy(empty);
+}
+
+static void test_public_arcs(void)
+{
+    gdPathPtr positive = gdPathCreate();
+    gdPathPtr negative = gdPathCreate();
+    gdPathPtr tangent = gdPathCreate();
+    unsigned int before;
+
+    gdPathArc(positive, 10, 10, 5, 0, M_PI / 2);
+    gdPathNegativeArc(negative, 10, 10, 5, 0, -M_PI / 2);
+    gdTestAssert(gdArrayNumElements(&positive->elements) > 1);
+    gdTestAssert(gdArrayNumElements(&negative->elements) > 1);
+    gdTestAssert(op_at(positive, 0) == gdPathOpsMoveTo);
+    gdTestAssert(op_at(negative, 0) == gdPathOpsMoveTo);
+    assert_point(positive, 0, 15, 10);
+    assert_point(negative, 0, 15, 10);
+    assert_point(positive, gdArrayNumElements(&positive->points) - 1, 10, 15);
+    assert_point(negative, gdArrayNumElements(&negative->points) - 1, 10, 5);
+
+    gdPathMoveTo(tangent, 0, 0);
+    gdPathArcTo(tangent, 10, 0, 10, 10, 2);
+    gdTestAssert(op_at(tangent, 1) == gdPathOpsLineTo);
+    assert_point(tangent, 1, 8, 0);
+    before = gdArrayNumElements(&tangent->elements);
+    gdPathArcTo(tangent, 20, 7, 20, 7, 2);
+    gdTestAssert(gdArrayNumElements(&tangent->elements) == before + 1);
+    assert_point(tangent, gdArrayNumElements(&tangent->points) - 1, 20, 7);
+    gdPathArcTo(tangent, 30, 11, 40, 15, 0);
+    assert_point(tangent, gdArrayNumElements(&tangent->points) - 1, 30, 11);
+
+    gdPathDestroy(tangent);
+    gdPathDestroy(negative);
+    gdPathDestroy(positive);
+}
+
 static void test_dash_structure(void)
 {
     const double values[] = {10, 5};
@@ -180,6 +246,8 @@ int main(void)
 {
     test_path_representation();
     test_relative_path_operations();
+    test_public_path_helpers();
+    test_public_arcs();
     test_dash_structure();
     test_stroke_caps_and_matrix();
     return gdNumFailures();

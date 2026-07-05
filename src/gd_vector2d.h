@@ -346,6 +346,20 @@ BGD_DECLARE(void) gdPathMatrixMapRect(const gdPathMatrixPtr matrix, const gdRect
 BGD_DECLARE(gdPathPtr) gdPathCreate(void);
 
 /**
+ * Function: gdPathDuplicate
+ *
+ * Create an independent copy of a path.
+ *
+ * Parameters:
+ *   path - The path to copy. Must not be NULL.
+ *
+ * Returns:
+ *   A new path, or NULL if path is NULL or allocation fails. Destroy the copy
+ *   with <gdPathDestroy>.
+ */
+BGD_DECLARE(gdPathPtr) gdPathDuplicate(const gdPathPtr path);
+
+/**
  * Function: gdPathDestroy
  *
  * Release a path. Passing NULL has no effect.
@@ -388,6 +402,18 @@ BGD_DECLARE(void) gdPathTransform(gdPathPtr path, const gdPathMatrixPtr matrix);
  *   y    - The vertical coordinate.
  */
 BGD_DECLARE(void) gdPathMoveTo(gdPathPtr path, double x, double y);
+
+/**
+ * Function: gdPathRelMoveTo
+ *
+ * Start a new contour at an offset from the current point. For an empty path,
+ * the offset is relative to (0, 0).
+ *
+ * Parameters:
+ *   path - The path to modify.
+ *   dx   - The horizontal offset.
+ *   dy   - The vertical offset.
+ */
 BGD_DECLARE(void) gdPathRelMoveTo(gdPathPtr path, double dx, double dy);
 
 /**
@@ -427,9 +453,20 @@ BGD_DECLARE(void) gdPathRelLineTo(gdPathPtr path, double dx, double dy);
  *   y2   - The endpoint's vertical coordinate.
  */
 BGD_DECLARE(void) gdPathQuadTo(gdPathPtr path, double x1, double y1, double x2, double y2);
+
+/**
+ * Function: gdPathRelQuadTo
+ *
+ * Add a quadratic Bezier curve using offsets from the current point.
+ *
+ * Parameters:
+ *   path - The path to modify.
+ *   dx1  - The control point's horizontal offset.
+ *   dy1  - The control point's vertical offset.
+ *   dx2  - The endpoint's horizontal offset.
+ *   dy2  - The endpoint's vertical offset.
+ */
 BGD_DECLARE(void) gdPathRelQuadTo(gdPathPtr path, double dx1, double dy1, double dx2, double dy2);
-BGD_DECLARE(void) gdPathCurveTo(gdPathPtr path, double x1, double y1, double x2, double y2, double x3, double y3);
-BGD_DECLARE(void) gdPathRelCurveTo(gdPathPtr path, double dx1, double dy1, double dx2, double dy2, double dx3, double dy3);
 
 /**
  * Function: gdPathCurveTo
@@ -446,6 +483,87 @@ BGD_DECLARE(void) gdPathRelCurveTo(gdPathPtr path, double dx1, double dy1, doubl
  *   y3   - The endpoint's vertical coordinate.
  */
 BGD_DECLARE(void) gdPathCurveTo(gdPathPtr path, double x1, double y1, double x2, double y2, double x3, double y3);
+
+/**
+ * Function: gdPathRelCurveTo
+ *
+ * Add a cubic Bezier curve using offsets from the current point.
+ *
+ * Parameters:
+ *   path - The path to modify.
+ *   dx1  - The first control point's horizontal offset.
+ *   dy1  - The first control point's vertical offset.
+ *   dx2  - The second control point's horizontal offset.
+ *   dy2  - The second control point's vertical offset.
+ *   dx3  - The endpoint's horizontal offset.
+ *   dy3  - The endpoint's vertical offset.
+ */
+BGD_DECLARE(void) gdPathRelCurveTo(gdPathPtr path, double dx1, double dy1, double dx2, double dy2, double dx3, double dy3);
+
+/**
+ * Function: gdPathArc
+ *
+ * Add a circular arc in the positive-angle direction. Angles are in radians.
+ * A line is added from the current point to the beginning of the arc when
+ * necessary.
+ *
+ * Parameters:
+ *   path   - The path to modify.
+ *   cx     - The center's horizontal coordinate.
+ *   cy     - The center's vertical coordinate.
+ *   radius - The arc radius.
+ *   angle1 - The starting angle in radians.
+ *   angle2 - The ending angle in radians.
+ */
+BGD_DECLARE(void) gdPathArc(gdPathPtr path, double cx, double cy, double radius, double angle1, double angle2);
+
+/**
+ * Function: gdPathNegativeArc
+ *
+ * Add a circular arc in the negative-angle direction. Angles are in radians.
+ * A line is added from the current point to the beginning of the arc when
+ * necessary.
+ *
+ * Parameters:
+ *   path   - The path to modify.
+ *   cx     - The center's horizontal coordinate.
+ *   cy     - The center's vertical coordinate.
+ *   radius - The arc radius.
+ *   angle1 - The starting angle in radians.
+ *   angle2 - The ending angle in radians.
+ */
+BGD_DECLARE(void) gdPathNegativeArc(gdPathPtr path, double cx, double cy, double radius, double angle1, double angle2);
+
+/**
+ * Function: gdPathArcTo
+ *
+ * Connect the current point to (x1, y1) and (x2, y2) with a circular arc
+ * tangent to both line segments. Degenerate geometry or a non-positive radius
+ * adds a line to (x1, y1).
+ *
+ * Parameters:
+ *   path   - The path to modify.
+ *   x1     - The corner's horizontal coordinate.
+ *   y1     - The corner's vertical coordinate.
+ *   x2     - The second tangent line's horizontal endpoint.
+ *   y2     - The second tangent line's vertical endpoint.
+ *   radius - The arc radius.
+ */
+BGD_DECLARE(void) gdPathArcTo(gdPathPtr path, double x1, double y1, double x2, double y2, double radius);
+
+/**
+ * Function: gdPathRectangle
+ *
+ * Add a closed rectangular contour.
+ *
+ * Parameters:
+ *   path   - The path to modify.
+ *   x      - The rectangle's left coordinate.
+ *   y      - The rectangle's top coordinate.
+ *   width  - The rectangle width.
+ *   height - The rectangle height.
+ */
+BGD_DECLARE(void) gdPathRectangle(gdPathPtr path, double x, double y, double width, double height);
 
 /**
  * Function: gdPathClose

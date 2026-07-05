@@ -280,7 +280,7 @@ gdContextPaint(gdContextPtr context)
     gdStatePtr state = context->state;
     if(state->clippath==NULL && context->clippath == NULL) {
         gdPathPtr path = gdPathCreate();
-        gdPathAddRectangle(path, context->clip.x, context->clip.y, context->clip.w, context->clip.h);
+        gdPathRectangle(path, context->clip.x, context->clip.y, context->clip.w, context->clip.h);
         context->clippath = gdSpanRleCreate();
         gdSpanRleRasterize(context->clippath, path, &state->matrix, &context->clip, NULL, gdFillRuleNonZero);
         gdPathDestroy(path);
@@ -450,19 +450,19 @@ gdContextRelQuadTo(gdContextPtr context, double dx1, double dy1, double dx2, dou
 BGD_DECLARE(void)
 gdContextArc(gdContextPtr context, double cx, double cy, double r, double a0, double a1)
 {
-    gdPathAddArc(context->path, cx, cy, r, a0, a1, 0);
+    gdPathArc(context->path, cx, cy, r, a0, a1);
 }
 
 BGD_DECLARE(void)
 gdContextNegativeArc(gdContextPtr context, double cx, double cy, double r, double a0, double a1)
 {
-    gdPathAddArc(context->path, cx, cy, r, a0, a1, 1);
+    gdPathNegativeArc(context->path, cx, cy, r, a0, a1);
 }
 
 BGD_DECLARE(void)
     gdContextRectangle(gdContextPtr context, double x, double y, double w, double h)
 {
-    gdPathAddRectangle(context->path, x, y, w, h);
+    gdPathRectangle(context->path, x, y, w, h);
 }
 
 BGD_DECLARE(void)
