@@ -1,14 +1,13 @@
 #include "gd_vector2d.h"
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 void save_png(gdImagePtr im, const char *filename)
 {
     FILE *fp;
     fp = fopen(filename, "wb");
-    if (!fp)
-    {
+    if (!fp) {
         fprintf(stderr, "Can't save png image %s\n", filename);
         return;
     }
@@ -27,25 +26,25 @@ void test_lines()
     gdContextPtr ctx = gdContextCreateForImage(im);
 
     /* Draw multiple lines with different widths and colors */
-    gdContextSetSourceRgba(ctx, 1.0, 0.0, 0.0, 1.0);  // red
+    gdContextSetSourceRgba(ctx, 1.0, 0.0, 0.0, 1.0); // red
     gdContextSetLineWidth(ctx, 2.0);
     gdContextMoveTo(ctx, 10, 10);
     gdContextLineTo(ctx, 190, 190);
     gdContextStroke(ctx);
 
-    gdContextSetSourceRgba(ctx, 0.0, 1.0, 0.0, 0.5);  // 50% green
+    gdContextSetSourceRgba(ctx, 0.0, 1.0, 0.0, 0.5); // 50% green
     gdContextSetLineWidth(ctx, 5.0);
     gdContextMoveTo(ctx, 190, 10);
     gdContextLineTo(ctx, 10, 190);
     gdContextStroke(ctx);
 
-    gdContextSetSourceRgba(ctx, 0.0, 0.0, 1.0, 0.8);  // 80% blue
+    gdContextSetSourceRgba(ctx, 0.0, 0.0, 1.0, 0.8); // 80% blue
     gdContextSetLineWidth(ctx, 3.0);
     gdContextMoveTo(ctx, 100, 10);
     gdContextLineTo(ctx, 100, 190);
     gdContextStroke(ctx);
 
-    gdContextSetSourceRgba(ctx, 1.0, 0.5, 0.0, 1.0);  // orange
+    gdContextSetSourceRgba(ctx, 1.0, 0.5, 0.0, 1.0); // orange
     gdContextSetLineWidth(ctx, 2.0);
     gdContextMoveTo(ctx, 10, 100);
     gdContextLineTo(ctx, 190, 100);
@@ -71,27 +70,27 @@ void test_curves()
     gdContextPtr ctx = gdContextCreateForImage(im);
 
     /* Cubic Bezier curve */
-    gdContextSetSourceRgba(ctx, 0.8, 0.2, 0.2, 1.0);  // dark red
+    gdContextSetSourceRgba(ctx, 0.8, 0.2, 0.2, 1.0); // dark red
     gdContextSetLineWidth(ctx, 3.0);
     gdContextMoveTo(ctx, 20, 180);
     gdContextCurveTo(ctx, 50, 20, 150, 20, 180, 180);
     gdContextStroke(ctx);
 
     /* Quadratic Bezier curve */
-    gdContextSetSourceRgba(ctx, 0.2, 0.8, 0.2, 1.0);  // green
+    gdContextSetSourceRgba(ctx, 0.2, 0.8, 0.2, 1.0); // green
     gdContextSetLineWidth(ctx, 2.0);
     gdContextMoveTo(ctx, 20, 180);
     gdContextQuadTo(ctx, 100, 20, 180, 180);
     gdContextStroke(ctx);
 
     /* Arc */
-    gdContextSetSourceRgba(ctx, 0.2, 0.2, 0.8, 1.0);  // blue
+    gdContextSetSourceRgba(ctx, 0.2, 0.2, 0.8, 1.0); // blue
     gdContextSetLineWidth(ctx, 4.0);
-    gdContextArc(ctx, 100, 100, 80, 0, M_PI);  // semicircle
+    gdContextArc(ctx, 100, 100, 80, 0, M_PI); // semicircle
     gdContextStroke(ctx);
 
     /* Filled rectangle with alpha */
-    gdContextSetSourceRgba(ctx, 1.0, 0.0, 0.0, 0.3);  // 30% red
+    gdContextSetSourceRgba(ctx, 1.0, 0.0, 0.0, 0.3); // 30% red
     gdContextRectangle(ctx, 60, 60, 80, 80);
     gdContextFill(ctx);
 
@@ -115,11 +114,10 @@ void test_transformations()
     gdContextPtr ctx = gdContextCreateForImage(im);
 
     /* Draw rotated rectangles using matrix push/pop via identity reset */
-    gdContextSetSourceRgba(ctx, 0.2, 0.6, 0.8, 0.7);  // 70% cyan
+    gdContextSetSourceRgba(ctx, 0.2, 0.6, 0.8, 0.7); // 70% cyan
     gdContextSetLineWidth(ctx, 2.0);
 
-    for (int i = 0; i < 12; i++)
-    {
+    for (int i = 0; i < 12; i++) {
         gdContextNewPath(ctx);
         /* Reset to identity then apply transform */
         gdContextSetSourceRgba(ctx, 0.2, 0.6, 0.8, 0.7);
@@ -132,7 +130,7 @@ void test_transformations()
     }
 
     /* Center circle */
-    gdContextSetSourceRgba(ctx, 0.8, 0.2, 0.2, 1.0);  // red
+    gdContextSetSourceRgba(ctx, 0.8, 0.2, 0.2, 1.0); // red
     gdContextSetLineWidth(ctx, 3.0);
     gdContextArc(ctx, 100, 100, 20, 0, 2 * M_PI);
     gdContextStroke(ctx);
@@ -208,11 +206,10 @@ void test_polygon()
     gdContextPtr ctx = gdContextCreateForImage(im);
 
     /* Star polygon */
-    gdContextSetSourceRgba(ctx, 1.0, 0.8, 0.0, 0.8);  // gold, 80% alpha
+    gdContextSetSourceRgba(ctx, 1.0, 0.8, 0.0, 0.8); // gold, 80% alpha
     gdContextSetLineWidth(ctx, 2.0);
     gdContextMoveTo(ctx, 100, 30);
-    for (int i = 1; i < 10; i++)
-    {
+    for (int i = 1; i < 10; i++) {
         double angle = i * 2 * M_PI / 10 - M_PI / 2;
         double r = (i % 2 == 0) ? 70 : 30;
         gdContextLineTo(ctx, 100 + r * cos(angle), 100 + r * sin(angle));
@@ -224,8 +221,7 @@ void test_polygon()
     gdContextSetSourceRgba(ctx, 0.8, 0.0, 0.0, 1.0);
     gdContextSetLineWidth(ctx, 3.0);
     gdContextMoveTo(ctx, 100, 30);
-    for (int i = 1; i < 10; i++)
-    {
+    for (int i = 1; i < 10; i++) {
         double angle = i * 2 * M_PI / 10 - M_PI / 2;
         double r = (i % 2 == 0) ? 70 : 30;
         gdContextLineTo(ctx, 100 + r * cos(angle), 100 + r * sin(angle));
@@ -264,8 +260,7 @@ void test_clipping()
     /* Draw lines that cross the clip region */
     gdContextSetSourceRgba(ctx, 0.0, 0.0, 1.0, 1.0);
     gdContextSetLineWidth(ctx, 2.0);
-    for (int i = 0; i < 200; i += 20)
-    {
+    for (int i = 0; i < 200; i += 20) {
         gdContextMoveTo(ctx, i, 0);
         gdContextLineTo(ctx, i, 200);
         gdContextStroke(ctx);

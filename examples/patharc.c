@@ -1,15 +1,12 @@
 #include "vector2d_example.h"
 #include <stdio.h>
 
-
-
 int main()
 {
     gdImagePtr image;
 
     image = vector2d_create_image(256, 256, gdTrueColorAlpha(255, 255, 255, 127));
-    if (!image)
-    {
+    if (!image) {
         fprintf(stderr, "Can't create image\n");
         return 1;
     }
@@ -25,7 +22,7 @@ int main()
     gdContextSetLineWidth(cr, 10.0);
     gdContextArc(cr, xc, yc, radius, angle1, angle2);
     gdContextStroke(cr);
- 
+
     /* draw helping lines */
     gdContextSetSourceRgba(cr, 1, 0.2, 0.2, 0.6);
     gdContextArc(cr, xc, yc, 10.0, 0, 2 * M_PI);

@@ -12,8 +12,8 @@
  * makes the translation, rotation, colors, line width, and clip temporary, so
  * the caller can draw the next planet without undoing any of them by hand.
  */
-static int draw_planet(gdContextPtr ctx, double angle, double distance,
-                       double radius, double red, double green, double blue)
+static int draw_planet(gdContextPtr ctx, double angle, double distance, double radius, double red,
+                       double green, double blue)
 {
     if (!gdContextSave(ctx))
         return 0;
@@ -48,8 +48,7 @@ static int draw_planet(gdContextPtr ctx, double angle, double distance,
     gdContextRotate(ctx, -angle * 1.7);
     gdContextSetSourceRgba(ctx, 1, 1, 1, 0.22);
     for (int band = -2; band <= 2; band++) {
-        gdContextRectangle(ctx, -radius * 1.4, band * radius * 0.42,
-                           radius * 2.8, radius * 0.13);
+        gdContextRectangle(ctx, -radius * 1.4, band * radius * 0.42, radius * 2.8, radius * 0.13);
         gdContextFill(ctx);
     }
     if (!gdContextRestore(ctx))
@@ -57,8 +56,7 @@ static int draw_planet(gdContextPtr ctx, double angle, double distance,
 
     /* This highlight is not clipped: restore returned to the planet's state. */
     gdContextSetSourceRgba(ctx, 1, 1, 1, 0.58);
-    gdContextArc(ctx, -radius * 0.34, -radius * 0.36,
-                 radius * 0.18, 0, 2 * M_PI);
+    gdContextArc(ctx, -radius * 0.34, -radius * 0.36, radius * 0.18, 0, 2 * M_PI);
     gdContextFill(ctx);
 
     return gdContextRestore(ctx);
@@ -68,8 +66,7 @@ int main(void)
 {
     const int width = 900;
     const int height = 700;
-    gdImagePtr image = vector2d_create_image(width, height,
-        gdTrueColorAlpha(8, 12, 32, 0));
+    gdImagePtr image = vector2d_create_image(width, height, gdTrueColorAlpha(8, 12, 32, 0));
     gdContextPtr ctx;
     gdPaintPtr sky;
     unsigned int seed = 0x5a17u;
@@ -127,9 +124,9 @@ int main(void)
 
     /* Each call starts from exactly the same root state. */
     if (!draw_planet(ctx, -0.55, 105, 22, 0.35, 0.72, 1.0) ||
-        !draw_planet(ctx,  1.15, 170, 34, 0.95, 0.42, 0.28) ||
-        !draw_planet(ctx,  2.85, 235, 27, 0.48, 0.88, 0.58) ||
-        !draw_planet(ctx,  5.45, 300, 43, 0.72, 0.52, 0.96))
+        !draw_planet(ctx, 1.15, 170, 34, 0.95, 0.42, 0.28) ||
+        !draw_planet(ctx, 2.85, 235, 27, 0.48, 0.88, 0.58) ||
+        !draw_planet(ctx, 5.45, 300, 43, 0.72, 0.52, 0.96))
         goto fail;
 
     gdContextFlushImage(ctx);

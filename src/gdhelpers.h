@@ -17,9 +17,9 @@ extern "C" {
 char *gd_strtok_r(char *s, const char *sep, char **state);
 
 /* These functions wrap memory management. gdFree is
-	in gd.h, where callers can utilize it to correctly
-	free memory allocated by these functions with the
-	right version of free(). */
+        in gd.h, where callers can utilize it to correctly
+        free memory allocated by these functions with the
+        right version of free(). */
 void *gdCalloc(size_t nmemb, size_t size) BGD_MALLOC;
 void *gdMalloc(size_t size) BGD_MALLOC;
 void *gdRealloc(void *ptr, size_t size);
@@ -28,9 +28,9 @@ void *gdRealloc(void *ptr, size_t size);
 void *gdReallocEx(void *ptr, size_t size);
 
 /* Returns nonzero if multiplying the two quantities will
-	result in integer overflow. Also returns nonzero if
-	either quantity is negative. By Phil Knirsch based on
-	netpbm fixes by Alan Cox. */
+        result in integer overflow. Also returns nonzero if
+        either quantity is negative. By Phil Knirsch based on
+        netpbm fixes by Alan Cox. */
 
 int overflow2(int a, int b);
 int overflowMul3(int a, int b, int c);

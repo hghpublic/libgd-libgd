@@ -33,9 +33,9 @@
 /* this is used for creating images in main memory */
 
 typedef struct ssIOCtx {
-	gdIOCtx ctx;
-	gdSourcePtr src;
-	gdSinkPtr snk;
+    gdIOCtx ctx;
+    gdSourcePtr src;
+    gdSinkPtr snk;
 } ssIOCtx;
 
 typedef struct ssIOCtx *ssIOCtxPtr;
@@ -47,91 +47,96 @@ static void sinkPutchar(gdIOCtx *ctx, int a);
 static void gdFreeSsCtx(gdIOCtx *ctx);
 
 /*
-	Function: gdNewSSCtx
+        Function: gdNewSSCtx
 
-	Return data as a dynamic pointer.
+        Return data as a dynamic pointer.
 */
-BGD_DECLARE(gdIOCtx *) gdNewSSCtx(gdSourcePtr src, gdSinkPtr snk) {
-	ssIOCtxPtr ctx;
+BGD_DECLARE(gdIOCtx *) gdNewSSCtx(gdSourcePtr src, gdSinkPtr snk)
+{
+    ssIOCtxPtr ctx;
 
-	ctx = (ssIOCtxPtr)gdMalloc(sizeof(ssIOCtx));
-	if (ctx == NULL) {
-		return NULL;
-	}
+    ctx = (ssIOCtxPtr)gdMalloc(sizeof(ssIOCtx));
+    if (ctx == NULL) {
+        return NULL;
+    }
 
-	ctx->src = src;
-	ctx->snk = snk;
+    ctx->src = src;
+    ctx->snk = snk;
 
-	ctx->ctx.getC = sourceGetchar;
-	ctx->ctx.getBuf = sourceGetbuf;
+    ctx->ctx.getC = sourceGetchar;
+    ctx->ctx.getBuf = sourceGetbuf;
 
-	ctx->ctx.putC = sinkPutchar;
-	ctx->ctx.putBuf = sinkPutbuf;
+    ctx->ctx.putC = sinkPutchar;
+    ctx->ctx.putBuf = sinkPutbuf;
 
-	ctx->ctx.tell = NULL;
-	ctx->ctx.seek = NULL;
+    ctx->ctx.tell = NULL;
+    ctx->ctx.seek = NULL;
 
-	ctx->ctx.gd_free = gdFreeSsCtx;
+    ctx->ctx.gd_free = gdFreeSsCtx;
 
-	return (gdIOCtx *)ctx;
+    return (gdIOCtx *)ctx;
 }
 
 static void gdFreeSsCtx(gdIOCtx *ctx) { gdFree(ctx); }
 
-static int sourceGetbuf(gdIOCtx *ctx, void *buf, int size) {
-	ssIOCtx *lctx;
-	int res;
+static int sourceGetbuf(gdIOCtx *ctx, void *buf, int size)
+{
+    ssIOCtx *lctx;
+    int res;
 
-	lctx = (ssIOCtx *)ctx;
+    lctx = (ssIOCtx *)ctx;
 
-	res = ((lctx->src->source)(lctx->src->context, buf, size));
+    res = ((lctx->src->source)(lctx->src->context, buf, size));
 
-	/*
-	 * Translate the return values from the Source object:
-	 * 0 is EOF, -1 is error
-	 */
+    /*
+     * Translate the return values from the Source object:
+     * 0 is EOF, -1 is error
+     */
 
-	if (res == 0) {
-		return 0;
-	} else if (res < 0) {
-		return 0;
-	} else {
-		return res;
-	}
+    if (res == 0) {
+        return 0;
+    } else if (res < 0) {
+        return 0;
+    } else {
+        return res;
+    }
 }
 
-static int sourceGetchar(gdIOCtx *ctx) {
-	int res;
-	unsigned char buf;
+static int sourceGetchar(gdIOCtx *ctx)
+{
+    int res;
+    unsigned char buf;
 
-	res = sourceGetbuf(ctx, &buf, 1);
+    res = sourceGetbuf(ctx, &buf, 1);
 
-	if (res == 1) {
-		return buf;
-	} else {
-		return EOF;
-	}
+    if (res == 1) {
+        return buf;
+    } else {
+        return EOF;
+    }
 }
 
-static int sinkPutbuf(gdIOCtx *ctx, const void *buf, int size) {
-	ssIOCtxPtr lctx;
-	int res;
+static int sinkPutbuf(gdIOCtx *ctx, const void *buf, int size)
+{
+    ssIOCtxPtr lctx;
+    int res;
 
-	lctx = (ssIOCtx *)ctx;
+    lctx = (ssIOCtx *)ctx;
 
-	res = (lctx->snk->sink)(lctx->snk->context, buf, size);
+    res = (lctx->snk->sink)(lctx->snk->context, buf, size);
 
-	if (res <= 0) {
-		return 0;
-	} else {
-		return res;
-	}
+    if (res <= 0) {
+        return 0;
+    } else {
+        return res;
+    }
 }
 
-static void sinkPutchar(gdIOCtx *ctx, int a) {
-	unsigned char b;
+static void sinkPutchar(gdIOCtx *ctx, int a)
+{
+    unsigned char b;
 
-	b = a;
+    b = a;
 
-	sinkPutbuf(ctx, &b, 1);
+    sinkPutbuf(ctx, &b, 1);
 }

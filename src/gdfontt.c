@@ -23,6 +23,7 @@
 
 #include "gdfontt.h"
 
+// clang-format off
 static char gdFontTinyData[] =
 {
 /* Char 0 */
@@ -2587,6 +2588,7 @@ static char gdFontTinyData[] =
 
 
 };
+// clang-format on
 
 gdFont gdFontTinyRep = {256, 0, 5, 8, gdFontTinyData};
 

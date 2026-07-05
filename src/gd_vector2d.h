@@ -21,30 +21,51 @@ typedef struct gdPathPatternStruct gdPathPattern;
 typedef gdPathPattern *gdPathPatternPtr;
 
 typedef struct gdPathMatrixStruct {
-	double m00, m10, m01, m11, m02, m12;
+    double m00, m10, m01, m11, m02, m12;
 } gdPathMatrix;
 typedef gdPathMatrix *gdPathMatrixPtr;
 
 typedef struct gdRectFStruct {
-	double x, y, w, h;
+    double x, y, w, h;
 } gdRectF;
 typedef gdRectF *gdRectFPtr;
 
-typedef enum {
-	GD_EXTEND_NONE, GD_EXTEND_REPEAT, GD_EXTEND_REFLECT, GD_EXTEND_PAD
-} gdExtendMode;
+typedef enum { GD_EXTEND_NONE, GD_EXTEND_REPEAT, GD_EXTEND_REFLECT, GD_EXTEND_PAD } gdExtendMode;
 typedef enum { gdLineCapButt, gdLineCapRound, gdLineCapSquare } gdLineCap;
 typedef enum { gdLineJoinMiter, gdLineJoinRound, gdLineJoinBevel } gdLineJoin;
 typedef enum { gdFillRuleNonZero, gdFillRuleEvenOdd } gdFillRule;
 
 typedef enum {
-	GD_OP_CLEAR, GD_OP_SOURCE, GD_OP_OVER, GD_OP_IN, GD_OP_OUT, GD_OP_ATOP,
-	GD_OP_DEST, GD_OP_DEST_OVER, GD_OP_DEST_IN, GD_OP_DEST_OUT, GD_OP_DEST_ATOP,
-	GD_OP_XOR, GD_OP_ADD, GD_OP_SATURATE, GD_OP_MULTIPLY, GD_OP_SCREEN,
-	GD_OP_OVERLAY, GD_OP_DARKEN, GD_OP_LIGHTEN, GD_OP_COLOR_DODGE,
-	GD_OP_COLOR_BURN, GD_OP_HARD_LIGHT, GD_OP_SOFT_LIGHT, GD_OP_DIFFERENCE,
-	GD_OP_EXCLUSION, GD_OP_HSL_HUE, GD_OP_HSL_SATURATION, GD_OP_HSL_COLOR,
-	GD_OP_HSL_LUMINOSITY, GD_OP_COUNT
+    GD_OP_CLEAR,
+    GD_OP_SOURCE,
+    GD_OP_OVER,
+    GD_OP_IN,
+    GD_OP_OUT,
+    GD_OP_ATOP,
+    GD_OP_DEST,
+    GD_OP_DEST_OVER,
+    GD_OP_DEST_IN,
+    GD_OP_DEST_OUT,
+    GD_OP_DEST_ATOP,
+    GD_OP_XOR,
+    GD_OP_ADD,
+    GD_OP_SATURATE,
+    GD_OP_MULTIPLY,
+    GD_OP_SCREEN,
+    GD_OP_OVERLAY,
+    GD_OP_DARKEN,
+    GD_OP_LIGHTEN,
+    GD_OP_COLOR_DODGE,
+    GD_OP_COLOR_BURN,
+    GD_OP_HARD_LIGHT,
+    GD_OP_SOFT_LIGHT,
+    GD_OP_DIFFERENCE,
+    GD_OP_EXCLUSION,
+    GD_OP_HSL_HUE,
+    GD_OP_HSL_SATURATION,
+    GD_OP_HSL_COLOR,
+    GD_OP_HSL_LUMINOSITY,
+    GD_OP_COUNT
 } gdCompositeOperator;
 typedef gdCompositeOperator gdImageOp;
 #define gdImageOpsSrc GD_OP_SOURCE
@@ -62,9 +83,11 @@ BGD_DECLARE(int) gdContextClip(gdContextPtr context);
 BGD_DECLARE(int) gdContextClipPreserve(gdContextPtr context);
 BGD_DECLARE(void) gdContextNewPath(gdContextPtr context);
 BGD_DECLARE(void) gdContextAppendPath(gdContextPtr context, gdPathPtr path);
-BGD_DECLARE(void) gdContextSetSourceRgba(gdContextPtr context, double r, double g, double b, double a);
+BGD_DECLARE(void)
+gdContextSetSourceRgba(gdContextPtr context, double r, double g, double b, double a);
 BGD_DECLARE(void) gdContextSetSourceRgb(gdContextPtr context, double r, double g, double b);
-BGD_DECLARE(void) gdContextSetSourceImage(gdContextPtr context, gdImagePtr image, double x, double y);
+BGD_DECLARE(void)
+gdContextSetSourceImage(gdContextPtr context, gdImagePtr image, double x, double y);
 BGD_DECLARE(void) gdContextSetSource(gdContextPtr context, gdPaintPtr source);
 BGD_DECLARE(void) gdContextSetOperator(gdContextPtr context, gdCompositeOperator op);
 BGD_DECLARE(void) gdContextSetOpacity(gdContextPtr context, double opacity);
@@ -72,13 +95,22 @@ BGD_DECLARE(void) gdContextMoveTo(gdContextPtr context, double x, double y);
 BGD_DECLARE(void) gdContextRelMoveTo(gdContextPtr context, double dx, double dy);
 BGD_DECLARE(void) gdContextLineTo(gdContextPtr context, double x, double y);
 BGD_DECLARE(void) gdContextRelLineTo(gdContextPtr context, double dx, double dy);
-BGD_DECLARE(void) gdContextCurveTo(gdContextPtr context, double x1, double y1, double x2, double y2, double x3, double y3);
-BGD_DECLARE(void) gdContextRelCurveTo(gdContextPtr context, double dx1, double dy1, double dx2, double dy2, double dx3, double dy3);
+BGD_DECLARE(void)
+gdContextCurveTo(gdContextPtr context, double x1, double y1, double x2, double y2, double x3,
+                 double y3);
+BGD_DECLARE(void)
+gdContextRelCurveTo(gdContextPtr context, double dx1, double dy1, double dx2, double dy2,
+                    double dx3, double dy3);
 BGD_DECLARE(void) gdContextQuadTo(gdContextPtr context, double x1, double y1, double x2, double y2);
-BGD_DECLARE(void) gdContextRelQuadTo(gdContextPtr context, double dx1, double dy1, double dx2, double dy2);
-BGD_DECLARE(void) gdContextArc(gdContextPtr context, double cx, double cy, double radius, double a0, double a1);
-BGD_DECLARE(void) gdContextNegativeArc(gdContextPtr context, double cx, double cy, double radius, double a0, double a1);
-BGD_DECLARE(void) gdContextRectangle(gdContextPtr context, double x, double y, double width, double height);
+BGD_DECLARE(void)
+gdContextRelQuadTo(gdContextPtr context, double dx1, double dy1, double dx2, double dy2);
+BGD_DECLARE(void)
+gdContextArc(gdContextPtr context, double cx, double cy, double radius, double a0, double a1);
+BGD_DECLARE(void)
+gdContextNegativeArc(gdContextPtr context, double cx, double cy, double radius, double a0,
+                     double a1);
+BGD_DECLARE(void)
+gdContextRectangle(gdContextPtr context, double x, double y, double width, double height);
 BGD_DECLARE(void) gdContextClosePath(gdContextPtr context);
 BGD_DECLARE(void) gdContextScale(gdContextPtr context, double x, double y);
 BGD_DECLARE(void) gdContextTranslate(gdContextPtr context, double x, double y);
@@ -87,7 +119,8 @@ BGD_DECLARE(void) gdContextTransform(gdContextPtr context, const gdPathMatrixPtr
 BGD_DECLARE(void) gdContextSetLineWidth(gdContextPtr context, double width);
 BGD_DECLARE(void) gdContextSetLineCap(gdContextPtr context, gdLineCap cap);
 BGD_DECLARE(void) gdContextSetLineJoin(gdContextPtr context, gdLineJoin join);
-BGD_DECLARE(void) gdContextSetDash(gdContextPtr context, double offset, const double *data, int size);
+BGD_DECLARE(void)
+gdContextSetDash(gdContextPtr context, double offset, const double *data, int size);
 BGD_DECLARE(void) gdContextSetFillRule(gdContextPtr context, gdFillRule rule);
 BGD_DECLARE(void) gdContextStroke(gdContextPtr context);
 BGD_DECLARE(void) gdContextStrokePreserve(gdContextPtr context);
@@ -97,9 +130,12 @@ BGD_DECLARE(void) gdContextPaint(gdContextPtr context);
 
 BGD_DECLARE(gdPaintPtr) gdPaintCreateFromPattern(gdPathPatternPtr pattern);
 BGD_DECLARE(gdPaintPtr) gdPaintCreateLinear(double x0, double y0, double x1, double y1);
-BGD_DECLARE(gdPaintPtr) gdPaintCreateRadial(double x0, double y0, double r0, double x1, double y1, double r1);
-BGD_DECLARE(int) gdPaintAddColorStopRgb(gdPaintPtr paint, double offset, double r, double g, double b);
-BGD_DECLARE(int) gdPaintAddColorStopRgba(gdPaintPtr paint, double offset, double r, double g, double b, double a);
+BGD_DECLARE(gdPaintPtr)
+gdPaintCreateRadial(double x0, double y0, double r0, double x1, double y1, double r1);
+BGD_DECLARE(int)
+gdPaintAddColorStopRgb(gdPaintPtr paint, double offset, double r, double g, double b);
+BGD_DECLARE(int)
+gdPaintAddColorStopRgba(gdPaintPtr paint, double offset, double r, double g, double b, double a);
 BGD_DECLARE(int) gdPaintSetExtend(gdPaintPtr paint, gdExtendMode extend);
 BGD_DECLARE(int) gdPaintSetMatrix(gdPaintPtr paint, const gdPathMatrixPtr matrix);
 BGD_DECLARE(void) gdPaintDestroy(gdPaintPtr paint);
@@ -109,7 +145,6 @@ BGD_DECLARE(void) gdPathPatternDestroy(gdPathPatternPtr pattern);
 BGD_DECLARE(void) gdPathPatternSetExtend(gdPathPatternPtr pattern, gdExtendMode extend);
 BGD_DECLARE(void) gdPathPatternSetMatrix(gdPathPatternPtr pattern, gdPathMatrixPtr matrix);
 BGD_DECLARE(void) gdPathPatternSetOpacity(gdPathPatternPtr pattern, double opacity);
-
 
 /**
  * Function: gdPathMatrixInit
@@ -132,9 +167,9 @@ BGD_DECLARE(void) gdPathPatternSetOpacity(gdPathPatternPtr pattern, double opaci
  *   - <gdPathMatrixInitIdentity>
  *   - <gdPathMatrixMap>
  */
-BGD_DECLARE(void) gdPathMatrixInit(gdPathMatrixPtr matrix,
-		double m00, double m10, double m01, double m11,
-		double m02, double m12);
+BGD_DECLARE(void)
+gdPathMatrixInit(gdPathMatrixPtr matrix, double m00, double m10, double m01, double m11, double m02,
+                 double m12);
 /**
  * Function: gdPathMatrixInitIdentity
  *
@@ -205,7 +240,8 @@ BGD_DECLARE(void) gdPathMatrixInitRotate(gdPathMatrixPtr matrix, double radians)
  *   x       - The horizontal coordinate of the rotation center.
  *   y       - The vertical coordinate of the rotation center.
  */
-BGD_DECLARE(void) gdPathMatrixInitRotateTranslate(gdPathMatrixPtr matrix, double radians, double x, double y);
+BGD_DECLARE(void)
+gdPathMatrixInitRotateTranslate(gdPathMatrixPtr matrix, double radians, double x, double y);
 
 /**
  * Function: gdPathMatrixTranslate
@@ -267,7 +303,8 @@ BGD_DECLARE(void) gdPathMatrixRotate(gdPathMatrixPtr matrix, double radians);
  *   x       - The horizontal coordinate of the rotation center.
  *   y       - The vertical coordinate of the rotation center.
  */
-BGD_DECLARE(void) gdPathMatrixRotateTranslate(gdPathMatrixPtr matrix, double radians, double x, double y);
+BGD_DECLARE(void)
+gdPathMatrixRotateTranslate(gdPathMatrixPtr matrix, double radians, double x, double y);
 
 /**
  * Function: gdPathMatrixMultiply
@@ -280,7 +317,8 @@ BGD_DECLARE(void) gdPathMatrixRotateTranslate(gdPathMatrixPtr matrix, double rad
  *   a      - The transformation applied first.
  *   b      - The transformation applied second.
  */
-BGD_DECLARE(void) gdPathMatrixMultiply(gdPathMatrixPtr matrix, const gdPathMatrixPtr a, const gdPathMatrixPtr b);
+BGD_DECLARE(void)
+gdPathMatrixMultiply(gdPathMatrixPtr matrix, const gdPathMatrixPtr a, const gdPathMatrixPtr b);
 
 /**
  * Function: gdPathMatrixInvert
@@ -308,7 +346,9 @@ BGD_DECLARE(int) gdPathMatrixInvert(gdPathMatrixPtr matrix);
  *   result_x - Where to store the transformed horizontal coordinate.
  *   result_y - Where to store the transformed vertical coordinate.
  */
-BGD_DECLARE(void) gdPathMatrixMap(const gdPathMatrixPtr matrix, double x, double y, double *result_x, double *result_y);
+BGD_DECLARE(void)
+gdPathMatrixMap(const gdPathMatrixPtr matrix, double x, double y, double *result_x,
+                double *result_y);
 
 /**
  * Function: gdPathMatrixMapPoint
@@ -320,7 +360,8 @@ BGD_DECLARE(void) gdPathMatrixMap(const gdPathMatrixPtr matrix, double x, double
  *   src    - The source point.
  *   dst    - Where to store the transformed point.
  */
-BGD_DECLARE(void) gdPathMatrixMapPoint(const gdPathMatrixPtr matrix, const gdPointFPtr src, gdPointFPtr dst);
+BGD_DECLARE(void)
+gdPathMatrixMapPoint(const gdPathMatrixPtr matrix, const gdPointFPtr src, gdPointFPtr dst);
 
 /**
  * Function: gdPathMatrixMapRect
@@ -333,7 +374,8 @@ BGD_DECLARE(void) gdPathMatrixMapPoint(const gdPathMatrixPtr matrix, const gdPoi
  *   src    - The source rectangle.
  *   dst    - Where to store the transformed bounding rectangle.
  */
-BGD_DECLARE(void) gdPathMatrixMapRect(const gdPathMatrixPtr matrix, const gdRectFPtr src, gdRectFPtr dst);
+BGD_DECLARE(void)
+gdPathMatrixMapRect(const gdPathMatrixPtr matrix, const gdRectFPtr src, gdRectFPtr dst);
 
 /**
  * Function: gdPathCreate
@@ -482,7 +524,8 @@ BGD_DECLARE(void) gdPathRelQuadTo(gdPathPtr path, double dx1, double dy1, double
  *   x3   - The endpoint's horizontal coordinate.
  *   y3   - The endpoint's vertical coordinate.
  */
-BGD_DECLARE(void) gdPathCurveTo(gdPathPtr path, double x1, double y1, double x2, double y2, double x3, double y3);
+BGD_DECLARE(void)
+gdPathCurveTo(gdPathPtr path, double x1, double y1, double x2, double y2, double x3, double y3);
 
 /**
  * Function: gdPathRelCurveTo
@@ -498,7 +541,9 @@ BGD_DECLARE(void) gdPathCurveTo(gdPathPtr path, double x1, double y1, double x2,
  *   dx3  - The endpoint's horizontal offset.
  *   dy3  - The endpoint's vertical offset.
  */
-BGD_DECLARE(void) gdPathRelCurveTo(gdPathPtr path, double dx1, double dy1, double dx2, double dy2, double dx3, double dy3);
+BGD_DECLARE(void)
+gdPathRelCurveTo(gdPathPtr path, double dx1, double dy1, double dx2, double dy2, double dx3,
+                 double dy3);
 
 /**
  * Function: gdPathArc
@@ -515,7 +560,8 @@ BGD_DECLARE(void) gdPathRelCurveTo(gdPathPtr path, double dx1, double dy1, doubl
  *   angle1 - The starting angle in radians.
  *   angle2 - The ending angle in radians.
  */
-BGD_DECLARE(void) gdPathArc(gdPathPtr path, double cx, double cy, double radius, double angle1, double angle2);
+BGD_DECLARE(void)
+gdPathArc(gdPathPtr path, double cx, double cy, double radius, double angle1, double angle2);
 
 /**
  * Function: gdPathNegativeArc
@@ -532,7 +578,9 @@ BGD_DECLARE(void) gdPathArc(gdPathPtr path, double cx, double cy, double radius,
  *   angle1 - The starting angle in radians.
  *   angle2 - The ending angle in radians.
  */
-BGD_DECLARE(void) gdPathNegativeArc(gdPathPtr path, double cx, double cy, double radius, double angle1, double angle2);
+BGD_DECLARE(void)
+gdPathNegativeArc(gdPathPtr path, double cx, double cy, double radius, double angle1,
+                  double angle2);
 
 /**
  * Function: gdPathArcTo
@@ -549,7 +597,8 @@ BGD_DECLARE(void) gdPathNegativeArc(gdPathPtr path, double cx, double cy, double
  *   y2     - The second tangent line's vertical endpoint.
  *   radius - The arc radius.
  */
-BGD_DECLARE(void) gdPathArcTo(gdPathPtr path, double x1, double y1, double x2, double y2, double radius);
+BGD_DECLARE(void)
+gdPathArcTo(gdPathPtr path, double x1, double y1, double x2, double y2, double radius);
 
 /**
  * Function: gdPathRectangle

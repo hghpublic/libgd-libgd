@@ -11,8 +11,7 @@ int main()
     unsigned int i;
 
     image = vector2d_create_image(width, width, gdTrueColorAlpha(255, 255, 255, 127));
-    if (!image)
-    {
+    if (!image) {
         fprintf(stderr, "Can't create image\n");
         return 1;
     }
@@ -20,14 +19,12 @@ int main()
     gdContextPtr cr = gdContextCreateForImage(image);
 
     gdContextSetSourceRgba(cr, 0.1, 0.2, 0.3, 1.0);
-    gdContextTranslate(cr, width/3, height/3);
+    gdContextTranslate(cr, width / 3, height / 3);
 
     gdContextScale(cr, 1.5, 1.5);
-    for (i = 0; i < sizeof(tiger_commands) / sizeof(tiger_commands[0]); i++)
-    {
+    for (i = 0; i < sizeof(tiger_commands) / sizeof(tiger_commands[0]); i++) {
         const struct command *cmd = &tiger_commands[i];
-        switch (cmd->type)
-        {
+        switch (cmd->type) {
         case 'm':
             gdContextMoveTo(cr, cmd->x0, cmd->y0);
             break;
@@ -35,23 +32,19 @@ int main()
             gdContextLineTo(cr, cmd->x0, cmd->y0);
             break;
         case 'c':
-            gdContextCurveTo(cr,
-                           cmd->x0, cmd->y0,
-                           cmd->x1, cmd->y1,
-                           cmd->x2, cmd->y2);
+            gdContextCurveTo(cr, cmd->x0, cmd->y0, cmd->x1, cmd->y1, cmd->x2, cmd->y2);
             break;
         case 'f':
-            gdContextSetSourceRgba(cr,
-                                  cmd->x0, cmd->y0, cmd->x1, cmd->y1);
+            gdContextSetSourceRgba(cr, cmd->x0, cmd->y0, cmd->x1, cmd->y1);
             gdContextFill(cr);
             break;
         }
     }
 
     gdContextSetSourceRgba(cr, 1, 0.2, 0.3, 1.0);
-    gdContextMoveTo(cr, width/2, height/2);
+    gdContextMoveTo(cr, width / 2, height / 2);
     gdContextSetLineWidth(cr, 4);
-    gdContextArc(cr, width/2, height/2, 30, M_PI/2, M_PI/2);
+    gdContextArc(cr, width / 2, height / 2, 30, M_PI / 2, M_PI / 2);
     gdContextStroke(cr);
 
     gdContextFlushImage(cr);

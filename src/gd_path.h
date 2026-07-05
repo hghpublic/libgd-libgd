@@ -1,6 +1,8 @@
 #ifndef GD_PATH_H
 #define GD_PATH_H
 
+#include "gd_vector2d_private.h"
+
 #include <math.h>
 
 gdPathPtr gdPathAddRef(gdPathPtr path);
@@ -21,12 +23,9 @@ static inline int _doubleEqualsEpsilon(double p1, double p2)
     return (fabs(p1 - p2) < EPSILON_DOUBLE);
 }
 
-static inline int _doubleIsZero(double f)
-{
-    return (fabs(f) <= EPSILON_DOUBLE);
-}
+static inline int _doubleIsZero(double f) { return (fabs(f) <= EPSILON_DOUBLE); }
 
-#define ARRAY_LENGTH(__array) ((int) (sizeof (__array) / sizeof (__array[0])))
+#define ARRAY_LENGTH(__array) ((int)(sizeof(__array) / sizeof(__array[0])))
 
 gdPaintPtr gdPaintCreateRgba(double r, double g, double b, double a);
 gdPaintPtr gdPaintAddRef(gdPaintPtr paint);

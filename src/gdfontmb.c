@@ -22,6 +22,7 @@
 
 #include "gdfontmb.h"
 
+// clang-format off
 static char gdFontMediumBoldData[] =
 {
 /* Char 0 */
@@ -3866,6 +3867,7 @@ static char gdFontMediumBoldData[] =
 
 
 };
+// clang-format on
 
 gdFont gdFontMediumBoldRep = {256, 0, 7, 13, gdFontMediumBoldData};
 

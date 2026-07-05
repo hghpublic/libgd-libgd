@@ -22,7 +22,7 @@
 #endif
 
 #include "gdfontg.h"
-
+// clang-format off
 static char gdFontGiantData[] = {
 /* Char 0 */
   0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -4378,6 +4378,7 @@ static char gdFontGiantData[] = {
 
 
 };
+// clang-format on
 
 gdFont gdFontGiantRep = {256, 0, 9, 15, gdFontGiantData};
 

@@ -5,8 +5,7 @@ void save_png(gdImagePtr im, const char *filename)
 {
     FILE *fp;
     fp = fopen(filename, "wb");
-    if (!fp)
-    {
+    if (!fp) {
         fprintf(stderr, "Can't save png image %s\n", filename);
         return;
     }
@@ -18,26 +17,22 @@ int main()
 {
     /* Create a truecolor image */
     gdImagePtr im = gdImageCreateTrueColor(200, 200);
-    if (!im)
-    {
+    if (!im) {
         fprintf(stderr, "Failed to create image\n");
         return 1;
     }
 
     /* Fill with blue background */
-    int blue = gdTrueColorAlpha(0, 0, 255, 0);  /* opaque blue */
-    for (int y = 0; y < 200; y++)
-    {
-        for (int x = 0; x < 200; x++)
-        {
+    int blue = gdTrueColorAlpha(0, 0, 255, 0); /* opaque blue */
+    for (int y = 0; y < 200; y++) {
+        for (int x = 0; x < 200; x++) {
             im->tpixels[y][x] = blue;
         }
     }
 
     /* Create context for the image */
     gdContextPtr ctx = gdContextCreateForImage(im);
-    if (!ctx)
-    {
+    if (!ctx) {
         fprintf(stderr, "Failed to create context\n");
         gdImageDestroy(im);
         return 1;

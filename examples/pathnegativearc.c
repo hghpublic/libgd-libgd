@@ -2,14 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 int main()
 {
     gdImagePtr image;
 
     image = vector2d_create_image(256, 256, gdTrueColorAlpha(255, 255, 255, 127));
-    if (!image)
-    {
+    if (!image) {
         fprintf(stderr, "Can't create image\n");
         return 1;
     }

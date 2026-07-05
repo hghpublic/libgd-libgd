@@ -47,7 +47,7 @@ if (WEBP_FOUND)
 endif (WEBP_FOUND)
 
 if (JXL_FOUND)
-	LIST(APPEND TESTS_FILES jxl_create_anim)
+	LIST(APPEND TESTS_FILES jxl_create_anim jxl_create_anim_vector)
 	if (PNG_FOUND)
 		LIST(APPEND TESTS_FILES jxl_frames)
 	endif (PNG_FOUND)

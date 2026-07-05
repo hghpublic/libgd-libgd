@@ -23,7 +23,7 @@
 #endif
 
 #include "gdfontl.h"
-
+// clang-format off
 static char gdFontLargeData[] =
 {
 /* Char 0 */
@@ -4636,6 +4636,7 @@ static char gdFontLargeData[] =
 
 
 };
+// clang-format on
 gdFont gdFontLargeRep = {256, 0, 8, 16, gdFontLargeData};
 
 BGD_EXPORT_DATA_PROT gdFontPtr gdFontLarge = &gdFontLargeRep;

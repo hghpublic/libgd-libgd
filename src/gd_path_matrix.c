@@ -4,24 +4,29 @@
 #include "config.h"
 #endif
 
-#include "gd_vector2d_private.h"
 #include "gd_path_matrix.h"
+#include "gd_vector2d_private.h"
 
-BGD_DECLARE(void) gdPathMatrixInit(gdPathMatrixPtr matrix,
-                      double m00, double m10,
-                      double m01, double m11,
-                      double m02, double m12)
+BGD_DECLARE(void)
+gdPathMatrixInit(gdPathMatrixPtr matrix, double m00, double m10, double m01, double m11, double m02,
+                 double m12)
 {
-    matrix->m00 = m00; matrix->m10 = m10;
-    matrix->m01 = m01; matrix->m11 = m11;
-    matrix->m02 = m02; matrix->m12 = m12;
+    matrix->m00 = m00;
+    matrix->m10 = m10;
+    matrix->m01 = m01;
+    matrix->m11 = m11;
+    matrix->m02 = m02;
+    matrix->m12 = m12;
 }
 
 BGD_DECLARE(void) gdPathMatrixInitIdentity(gdPathMatrixPtr matrix)
 {
-    matrix->m00 = 1.0; matrix->m10 = 0.0;
-    matrix->m01 = 0.0; matrix->m11 = 1.0;
-    matrix->m02 = 0.0; matrix->m12 = 0.0;
+    matrix->m00 = 1.0;
+    matrix->m10 = 0.0;
+    matrix->m01 = 0.0;
+    matrix->m11 = 1.0;
+    matrix->m02 = 0.0;
+    matrix->m12 = 0.0;
 }
 
 BGD_DECLARE(void) gdPathMatrixInitTranslate(gdPathMatrixPtr matrix, double x, double y)
@@ -47,7 +52,8 @@ BGD_DECLARE(void) gdPathMatrixInitRotate(gdPathMatrixPtr matrix, double radians)
     gdPathMatrixInit(matrix, c, s, -s, c, 0.0, 0.0);
 }
 
-BGD_DECLARE(void) gdPathMatrixInitRotateTranslate(gdPathMatrixPtr matrix, double radians, double x, double y)
+BGD_DECLARE(void)
+gdPathMatrixInitRotateTranslate(gdPathMatrixPtr matrix, double radians, double x, double y)
 {
     double c = cos(radians);
     double s = sin(radians);
@@ -86,14 +92,16 @@ BGD_DECLARE(void) gdPathMatrixRotate(gdPathMatrixPtr matrix, double radians)
     gdPathMatrixMultiply(matrix, &m, matrix);
 }
 
-BGD_DECLARE(void) gdPathMatrixRotateTranslate(gdPathMatrixPtr matrix, double radians, double x, double y)
+BGD_DECLARE(void)
+gdPathMatrixRotateTranslate(gdPathMatrixPtr matrix, double radians, double x, double y)
 {
     gdPathMatrix m;
     gdPathMatrixInitRotateTranslate(&m, radians, x, y);
     gdPathMatrixMultiply(matrix, &m, matrix);
 }
 
-BGD_DECLARE(void) gdPathMatrixMultiply(gdPathMatrixPtr matrix, const gdPathMatrixPtr a, const gdPathMatrixPtr b)
+BGD_DECLARE(void)
+gdPathMatrixMultiply(gdPathMatrixPtr matrix, const gdPathMatrixPtr a, const gdPathMatrixPtr b)
 {
     double m00 = a->m00 * b->m00 + a->m10 * b->m01;
     double m10 = a->m00 * b->m10 + a->m10 * b->m11;
@@ -108,7 +116,7 @@ BGD_DECLARE(void) gdPathMatrixMultiply(gdPathMatrixPtr matrix, const gdPathMatri
 BGD_DECLARE(int) gdPathMatrixInvert(gdPathMatrixPtr matrix)
 {
     double det = (matrix->m00 * matrix->m11 - matrix->m10 * matrix->m01);
-    if(det == 0.0)
+    if (det == 0.0)
         return 0;
 
     double inv_det = 1.0 / det;
@@ -123,18 +131,22 @@ BGD_DECLARE(int) gdPathMatrixInvert(gdPathMatrixPtr matrix)
     return 1;
 }
 
-BGD_DECLARE(void) gdPathMatrixMap(const gdPathMatrixPtr matrix, double x, double y, double *result_x, double *result_y)
+BGD_DECLARE(void)
+gdPathMatrixMap(const gdPathMatrixPtr matrix, double x, double y, double *result_x,
+                double *result_y)
 {
     *result_x = x * matrix->m00 + y * matrix->m01 + matrix->m02;
     *result_y = x * matrix->m10 + y * matrix->m11 + matrix->m12;
 }
 
-BGD_DECLARE(void) gdPathMatrixMapPoint(const gdPathMatrixPtr matrix, const gdPointFPtr src, gdPointFPtr dst)
+BGD_DECLARE(void)
+gdPathMatrixMapPoint(const gdPathMatrixPtr matrix, const gdPointFPtr src, gdPointFPtr dst)
 {
     gdPathMatrixMap(matrix, src->x, src->y, &dst->x, &dst->y);
 }
 
-BGD_DECLARE(void) gdPathMatrixMapRect(const gdPathMatrixPtr matrix, const gdRectFPtr src, gdRectFPtr dst)
+BGD_DECLARE(void)
+gdPathMatrixMapRect(const gdPathMatrixPtr matrix, const gdRectFPtr src, gdRectFPtr dst)
 {
     gdPointF p[4];
     p[0].x = src->x;
@@ -156,12 +168,15 @@ BGD_DECLARE(void) gdPathMatrixMapRect(const gdPathMatrixPtr matrix, const gdRect
     double r = p[0].x;
     double b = p[0].y;
 
-    for(int i = 1;i < 4;i++)
-    {
-        if(p[i].x < l) l = p[i].x;
-        if(p[i].x > r) r = p[i].x;
-        if(p[i].y < t) t = p[i].y;
-        if(p[i].y > b) b = p[i].y;
+    for (int i = 1; i < 4; i++) {
+        if (p[i].x < l)
+            l = p[i].x;
+        if (p[i].x > r)
+            r = p[i].x;
+        if (p[i].y < t)
+            t = p[i].y;
+        if (p[i].y > b)
+            b = p[i].y;
     }
 
     dst->x = l;
@@ -170,41 +185,35 @@ BGD_DECLARE(void) gdPathMatrixMapRect(const gdPathMatrixPtr matrix, const gdRect
     dst->h = b - t;
 }
 
-void
-_matrix_get_affine (const gdPathMatrixPtr matrix,
-			  double *m00, double *m10,
-			  double *m01, double *m11,
-			  double *m02, double *m12)
+void _matrix_get_affine(const gdPathMatrixPtr matrix, double *m00, double *m10, double *m01,
+                        double *m11, double *m02, double *m12)
 {
-    *m00  = matrix->m00;
-    *m10  = matrix->m10;
+    *m00 = matrix->m00;
+    *m10 = matrix->m10;
 
-    *m01  = matrix->m01;
-    *m11  = matrix->m11;
+    *m01 = matrix->m01;
+    *m11 = matrix->m11;
 
     if (m02)
-	*m02 = matrix->m02;
+        *m02 = matrix->m02;
     if (m12)
-	*m12 = matrix->m12;
+        *m12 = matrix->m12;
 }
 
-double _gd_matrix_transformed_circle_major_axis (const gdPathMatrixPtr matrix, double radius)
+double _gd_matrix_transformed_circle_major_axis(const gdPathMatrixPtr matrix, double radius)
 {
-    double  a, b, c, d, f, g, h, i, j;
+    double a, b, c, d, f, g, h, i, j;
 
-    _matrix_get_affine (matrix,
-                              &a, &b,
-                              &c, &d,
-                              NULL, NULL);
+    _matrix_get_affine(matrix, &a, &b, &c, &d, NULL, NULL);
 
-    i = a*a + b*b;
-    j = c*c + d*d;
+    i = a * a + b * b;
+    j = c * c + d * d;
 
     f = 0.5 * (i + j);
     g = 0.5 * (i - j);
-    h = a*c + b*d;
+    h = a * c + b * d;
 
-    return radius * sqrt (f + hypot (g, h));
+    return radius * sqrt(f + hypot(g, h));
 
     /*
      * we don't need the minor axis length, which is

@@ -22,6 +22,7 @@
 
 #include "gdfonts.h"
 
+// clang-format off
 static char gdFontSmallData[] =
 {
 /* Char 0 */
@@ -3866,6 +3867,8 @@ static char gdFontSmallData[] =
 
 
 };
+// clang-format on
+
 gdFont gdFontSmallRep = {256, 0, 6, 13, gdFontSmallData};
 
 BGD_EXPORT_DATA_PROT gdFontPtr gdFontSmall = &gdFontSmallRep;
