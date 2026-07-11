@@ -16,6 +16,8 @@
 /*                                                                         */
 /***************************************************************************/
 
+#include "gd.h"
+#include "gdhelpers.h"
 #include "gd_ft_stroker.h"
 #include "gd_ft_math.h"
 #include <assert.h>
@@ -320,11 +322,20 @@ static GD_FT_Error ft_stroke_border_grow(GD_FT_StrokeBorder border, GD_FT_UInt n
         while (cur_max < new_max)
             cur_max += (cur_max >> 1) + 16;
 
-        border->points = (GD_FT_Vector *)realloc(border->points, cur_max * sizeof(GD_FT_Vector));
-        border->tags = (GD_FT_Byte *)realloc(border->tags, cur_max * sizeof(GD_FT_Byte));
-
-        if (!border->points || !border->tags)
+        GD_FT_Vector *points = (GD_FT_Vector *)gdRealloc(border->points, cur_max * sizeof(GD_FT_Vector));
+        if (!points) {
+            error = -1;
             goto Exit;
+        }
+        border->points = points;
+
+        GD_FT_Byte *tags = (GD_FT_Byte *)gdRealloc(border->tags, cur_max * sizeof(GD_FT_Byte));
+        if (!tags) {
+            error = -1;
+            goto Exit;
+        }
+        border->tags = tags;
+
 
         border->max_points = cur_max;
     }
@@ -559,8 +570,8 @@ static void ft_stroke_border_reset(GD_FT_StrokeBorder border)
 
 static void ft_stroke_border_done(GD_FT_StrokeBorder border)
 {
-    free(border->points);
-    free(border->tags);
+    gdFree(border->points);
+    gdFree(border->tags);
 
     border->num_points = 0;
     border->max_points = 0;
@@ -690,7 +701,7 @@ GD_FT_Error GD_FT_Stroker_New(GD_FT_Stroker *astroker)
     GD_FT_Error error = 0; /* assigned in SW_FT_NEW */
     GD_FT_Stroker stroker = NULL;
 
-    stroker = (GD_FT_StrokerRec *)calloc(1, sizeof(GD_FT_StrokerRec));
+    stroker = (GD_FT_StrokerRec *)gdCalloc(1, sizeof(GD_FT_StrokerRec));
     if (stroker) {
         ft_stroke_border_init(&stroker->borders[0]);
         ft_stroke_border_init(&stroker->borders[1]);
@@ -738,7 +749,7 @@ void GD_FT_Stroker_Done(GD_FT_Stroker stroker)
         ft_stroke_border_done(&stroker->borders[0]);
         ft_stroke_border_done(&stroker->borders[1]);
 
-        free(stroker);
+        gdFree(stroker);
     }
 }
 
