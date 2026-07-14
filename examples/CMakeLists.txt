@@ -24,6 +24,10 @@ if (PNG_FOUND)
 	if (FREETYPE_FOUND)
 		LIST(APPEND TESTS_FILES text_pattern text_curve)
 	endif (FREETYPE_FOUND)
+
+	if (JPEG_FOUND)
+		LIST(APPEND TESTS_FILES copyrotated flip nnquant imagescale)
+	endif (JPEG_FOUND)
 endif (PNG_FOUND)
 
 if (JPEG_FOUND)
