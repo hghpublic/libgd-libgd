@@ -28,22 +28,6 @@
 
 static int gdGuessBackgroundColorFromCorners(gdImagePtr im, int *color);
 
-/**
- * Function: gdImageCrop
- *
- * Crop an image to a given rectangle
- *
- * Parameters:
- *   src  - The image.
- *   crop - The cropping rectangle, see <gdRect>.
- *
- * Returns:
- *   The newly created cropped image, or NULL on failure.
- *
- * See also:
- *   - <gdImageCropAuto>
- *   - <gdImageCropThreshold>
- */
 BGD_DECLARE(gdImagePtr) gdImageCrop(gdImagePtr src, const gdRect *crop)
 {
     gdImagePtr dst;
@@ -64,24 +48,6 @@ BGD_DECLARE(gdImagePtr) gdImageCrop(gdImagePtr src, const gdRect *crop)
     return dst;
 }
 
-/**
- * Function: gdImageCropAuto
- *
- * Crop an image automatically
- *
- * This function detects the cropping area according to the given _mode_.
- *
- * Parameters:
- *   im   - The image.
- *   mode - The cropping mode, see <gdCropMode>.
- *
- * Returns:
- *   The newly created cropped image, or NULL on failure.
- *
- * See also:
- *   - <gdImageCrop>
- *   - <gdImageCropThreshold>
- */
 BGD_DECLARE(gdImagePtr)
 gdImageCropAuto(gdImagePtr im, const unsigned int mode)
 {
@@ -172,27 +138,6 @@ break4:
     return gdImageCrop(im, &crop);
 }
 
-/**
- * Function: gdImageCropThreshold
- *
- * Crop an image using a given color
- *
- * The _threshold_ defines the tolerance to be used while comparing the image
- * color and the color to crop. The method used to calculate the color
- * difference is based on the color distance in the RGB(A) cube.
- *
- * Parameters:
- *   im        - The image.
- *   color     - The crop color.
- *   threshold - The crop threshold.
- *
- * Returns:
- *   The newly created cropped image, or NULL on failure.
- *
- * See also:
- *   - <gdImageCrop>
- *   - <gdImageCropAuto>
- */
 BGD_DECLARE(gdImagePtr)
 gdImageCropThreshold(gdImagePtr im, const unsigned int color, const float threshold)
 {
