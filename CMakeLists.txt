@@ -33,6 +33,7 @@ OPTION(BUILD_TESTS "Build tests" 1)
 OPTION(BUILD_EXAMPLES "Build examples" 1)
 OPTION(BUILD_PROGRAMS "Build programs" 1)
 OPTION(BUILD_DOCS "Build docs" 1)
+OPTION(INSTALL_API_DOCS "Install generated API documentation when available" 1)
 OPTION(BUILD_CPACK "Build CPACK" 1)
 
 if (VERBOSE_MAKEFILE)
