@@ -241,108 +241,115 @@ extern "C" {
    based on the alpha channel value of the source color.
    The resulting color is opaque. */
 
+/**
+ * @brief Blend two colors
+ *
+ * This function accepts truecolor pixel values only. The
+ * source color is composited with the destination color
+ * based on the alpha channel value of the source color.
+ * The resulting color is opaque.
+ * @param dst The color to blend onto.
+ * @param src The color to blend.
+ *
+ * @see gdImageAlphaBlending gdLayerOverlay gdLayerMultiply
+ */
 BGD_DECLARE(int) gdAlphaBlend(int dest, int src);
+
+/**
+ * @brief Overlay two colors
+ *
+ * @param dst The color to overlay onto.
+ * @param src The color to overlay.
+ *
+ * @return The resulting color.
+ * 
+ * @see gdImageAlphaBlending gdAlphaBlend gdLayerMultiply
+ */
 BGD_DECLARE(int) gdLayerOverlay(int dest, int src);
+
+/**
+ * @brief Overlay two colors with multiply effect
+ *
+ * @param dst The color to overlay onto.
+ * @param src The color to overlay.
+ *
+ * @return The resulting color.
+ * 
+ * @see gdImageAlphaBlending  gdAlphaBlend gdLayerOverlay
+ */
 BGD_DECLARE(int) gdLayerMultiply(int dest, int src);
 
 /**
- * Constants: gdInterpolationMethod
+ * @addtogroup TransformScaleRotate Transform, scale and rotate
+ * @{
+ */
+/**
+* @brief Let @ref gdImageScaleWithOptions choose the interpolation method from the scale
+ * direction.
+ *
+ * Automatic selection uses @ref GD_LANCZOS3 for downscales or mixed-axis scales,
+ * and @ref GD_CATMULLROM for pure upscales.
+ */
+#define GD_SCALE_INTERPOLATION_AUTO -1
+
+/**
+ * @brief gdInterpolationMethod
  *
  * Interpolation kernels used by image scaling, rotation and affine
- * transformation functions. Newly-created images use <GD_BILINEAR_FIXED>
- * by default. Call <gdImageSetInterpolationMethod> on the source image before
+ * transformation functions. Newly-created images use @ref GD_BILINEAR_FIXED
+ * by default. Call @ref gdImageSetInterpolationMethod on the source image before
  * using APIs that read the image's current interpolation method.
  *
- * <gdImageScaleWithOptions> can either use one of these values explicitly or
- * use <GD_SCALE_INTERPOLATION_AUTO> to choose a method from the requested
+ * @ref gdImageScaleWithOptions can either use one of these values explicitly or
+ * use @ref GD_SCALE_INTERPOLATION_AUTO to choose a method from the requested
  * scale direction.
- *
- *  GD_DEFAULT            - Compatibility default. Setting this resolves to <GD_LINEAR>.
- *  GD_BELL               - Bell filter.
- *  GD_BESSEL             - Bessel filter.
- *  GD_BILINEAR_FIXED     - Compatibility bilinear scaler.
- *  GD_BICUBIC            - Bicubic interpolation.
- *  GD_BICUBIC_FIXED      - Compatibility bicubic scaler.
- *  GD_BLACKMAN           - Blackman filter.
- *  GD_BOX                - Box filter.
- *  GD_BSPLINE            - B-spline filter.
- *  GD_CATMULLROM         - Catmull-Rom filter.
- *  GD_GAUSSIAN           - Gaussian filter.
- *  GD_GENERALIZED_CUBIC  - Generalized cubic filter.
- *  GD_HERMITE            - Hermite filter.
- *  GD_HAMMING            - Hamming filter.
- *  GD_HANNING            - Hanning filter.
- *  GD_MITCHELL           - Mitchell filter.
- *  GD_NEAREST_NEIGHBOUR  - Nearest-neighbour interpolation.
- *  GD_POWER              - Power filter.
- *  GD_QUADRATIC          - Quadratic filter.
- *  GD_SINC               - Sinc filter.
- *  GD_TRIANGLE           - Triangle filter.
- *  GD_WEIGHTED4          - Four-pixel weighted interpolation for rotation and affine sampling.
- *  GD_LINEAR             - Bilinear interpolation.
- *  GD_LANCZOS3           - Lanczos filter with radius 3.
- *  GD_LANCZOS8           - Lanczos filter with radius 8.
- *  GD_BLACKMAN_BESSEL    - Blackman-windowed Bessel filter.
- *  GD_BLACKMAN_SINC      - Blackman-windowed sinc filter.
- *  GD_QUADRATIC_BSPLINE  - Quadratic B-spline filter.
- *  GD_CUBIC_SPLINE       - Cubic spline filter.
- *  GD_COSINE             - Cosine filter.
- *  GD_WELSH              - Welsh filter.
- *
- * Notes:
- *   <GD_WEIGHTED4> is not supported by <gdImageScale>. For downscales or
- *   mixed-axis scales, <gdImageScale> maps the fixed compatibility methods
- *   (<GD_DEFAULT>, <GD_BILINEAR_FIXED>, <GD_LINEAR>, <GD_BICUBIC_FIXED> and
- *   <GD_BICUBIC>) to <GD_TRIANGLE> to avoid the blur and aliasing of the old
+ * @note
+ *   @ref GD_WEIGHTED4 is not supported by @ref gdImageScale. For downscales or
+ *   mixed-axis scales, @ref gdImageScale maps the fixed compatibility methods
+ *   (@ref GD_DEFAULT, @ref GD_BILINEAR_FIXED, @ref GD_LINEAR, @ref GD_BICUBIC_FIXED and
+ *   @ref GD_BICUBIC) to @ref GD_TRIANGLE to avoid the blur and aliasing of the old
  *   fixed scalers.
  *
- * See also:
- *  - <gdImageSetInterpolationMethod>
- *  - <gdImageScale>
- *  - <gdImageScaleWithOptions>
- *  - <gdImageRotateInterpolated>
- *  - <gdTransformAffineCopy>
+ * @see gdImageSetInterpolationMethod gdImageScale gdImageScaleWithOptions gdImageRotateInterpolated gdTransformAffineCopy
  */
 typedef enum {
-    GD_DEFAULT = 0,
-    GD_BELL,
-    GD_BESSEL,
-    GD_BILINEAR_FIXED,
-    GD_BICUBIC,
-    GD_BICUBIC_FIXED,
-    GD_BLACKMAN,
-    GD_BOX,
-    GD_BSPLINE,
-    GD_CATMULLROM,
-    GD_GAUSSIAN,
-    GD_GENERALIZED_CUBIC,
-    GD_HERMITE,
-    GD_HAMMING,
-    GD_HANNING,
-    GD_MITCHELL,
-    GD_NEAREST_NEIGHBOUR,
-    GD_POWER,
-    GD_QUADRATIC,
-    GD_SINC,
-    GD_TRIANGLE,
-    GD_WEIGHTED4,
-    GD_LINEAR,
-    GD_LANCZOS3,
-    GD_LANCZOS8,
-    GD_BLACKMAN_BESSEL,
-    GD_BLACKMAN_SINC,
-    GD_QUADRATIC_BSPLINE,
-    GD_CUBIC_SPLINE,
-    GD_COSINE,
-    GD_WELSH,
+    GD_DEFAULT = 0, /**< Compatibility default. Setting this resolves to @ref GD_LINEAR */
+    GD_BELL,        /**< Bell filter. */
+    GD_BESSEL,      /**< Bessel filter. */
+    GD_BILINEAR_FIXED, /**< Compatibility bilinear scaler. */
+    GD_BICUBIC,     /**< Bicubic interpolation. */
+    GD_BICUBIC_FIXED, /**< Compatibility bicubic scaler. */
+    GD_BLACKMAN,    /**< Blackman filter. */
+    GD_BOX,         /**< Box filter. */
+    GD_BSPLINE,     /**< B-spline filter. */
+    GD_CATMULLROM,  /**< Catmull-Rom filter. */
+    GD_GAUSSIAN,    /**< Gaussian filter. */
+    GD_GENERALIZED_CUBIC, /**< Generalized cubic filter. */
+    GD_HERMITE,     /**< Hermite filter. */
+    GD_HAMMING,     /**< Hamming filter. */
+    GD_HANNING,     /**< Hanning filter. */
+    GD_MITCHELL,    /**< Mitchell filter. */
+    GD_NEAREST_NEIGHBOUR, /**< Nearest-neighbour interpolation. */
+    GD_POWER,     /**< Power filter. */
+    GD_QUADRATIC, /**< Quadratic filter. */
+    GD_SINC,      /**< Sinc filter. */
+    GD_TRIANGLE,  /**< Triangle filter. */
+    GD_WEIGHTED4, /**< Four-pixel weighted interpolation for rotation and affine sampling. */
+    GD_LINEAR,    /**< Bilinear interpolation. */
+    GD_LANCZOS3,  /**< Lanczos filter with radius 3. */
+    GD_LANCZOS8,  /**< Lanczos filter with radius 8. */
+    GD_BLACKMAN_BESSEL, /**< Blackman-windowed Bessel filter. */
+    GD_BLACKMAN_SINC,   /**< Blackman-windowed sinc filter. */
+    GD_QUADRATIC_BSPLINE, /**< Quadratic B-spline filter. */
+    GD_CUBIC_SPLINE,      /**< Cubic spline filter. */
+    GD_COSINE,         /**< Cosine filter. */
+    GD_WELSH,       /**< Welsh filter. */
     GD_METHOD_COUNT = 30
 } gdInterpolationMethod;
 
-/* define struct with name and func ptr and add it to gdImageStruct
- * gdInterpolationMethod interpolation; */
-
 /* Interpolation function ptr */
 typedef double (*interpolation_method)(double, double);
+/** @} */
 
 /*
    Group: Types
@@ -362,10 +369,9 @@ typedef double (*interpolation_method)(double, double);
          <Accessor Macros>
 
    (Previous versions of this library encouraged directly manipulating
-   the contents of the struct but we are attempting to move away from
-   this practice so the fields are no longer documented here.  If you
-   need to poke at the internals of this struct, feel free to look at
-   *gd.h*.)
+   the contents of the struct.
+   We are attempting to move away from this practice so the fields
+   will be considered private in 2.5 and later. )
 */
 typedef struct gdImageStruct {
     /* Palette-based image pixels */
@@ -587,11 +593,6 @@ typedef void (*gdErrorMethod)(int, const char *, va_list);
 BGD_DECLARE(void) gdSetErrorMethod(gdErrorMethod);
 BGD_DECLARE(void) gdClearErrorMethod(void);
 
-/* For backwards compatibility only. Use gdImageSetStyle()
-   for MUCH more flexible line drawing. Also see
-   gdImageSetBrush(). */
-#define gdDashSize 4
-
 /**
  * Group: Colors
  *
@@ -620,6 +621,10 @@ BGD_DECLARE(void) gdClearErrorMethod(void);
  *   gdAntiAliased   - draw anti aliased
  */
 
+/* For backwards compatibility only. Use gdImageSetStyle()
+   for MUCH more flexible line drawing. Also see
+   gdImageSetBrush(). */
+#define gdDashSize 4
 #define gdStyled (-2)
 #define gdBrushed (-3)
 #define gdStyledBrushed (-4)
@@ -1346,23 +1351,18 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromBmpCtx(gdIOCtxPtr infile);
  */
 
 /**
- * Constants: gdUhdrStatus
- *
- * Return status values used by UltraHDR APIs.
- *
- *  GD_UHDR_SUCCESS        - operation succeeded
- *  GD_UHDR_NOT_AVAILABLE  - libgd was built without UltraHDR support
- *  GD_UHDR_E_INVALID      - invalid argument or state
- *  GD_UHDR_E_UNSUPPORTED  - unsupported format or operation
- *  GD_UHDR_E_ENCODE       - encode failure
- *  GD_UHDR_E_DECODE       - decode failure
+ * @name Constants: gdUhdrStatus
+ * @brief Return status values used by UltraHDR APIs.
+ * @{
  */
-#define GD_UHDR_SUCCESS 0
-#define GD_UHDR_NOT_AVAILABLE -1
-#define GD_UHDR_E_INVALID -2
-#define GD_UHDR_E_UNSUPPORTED -3
-#define GD_UHDR_E_ENCODE -4
-#define GD_UHDR_E_DECODE -5
+#define GD_UHDR_SUCCESS 0        /**< Operation succeeded. */
+#define GD_UHDR_NOT_AVAILABLE -1 /**< libgd was built without UltraHDR support. */
+#define GD_UHDR_E_INVALID -2     /**< Invalid argument or state. */
+#define GD_UHDR_E_UNSUPPORTED -3 /**< Unsupported format or operation. */
+#define GD_UHDR_E_ENCODE -4      /**< Encode failure. */
+#define GD_UHDR_E_DECODE -5      /**< Decode failure. */
+/** @} */
+
 
 /**
  * Constants: gdUhdrMirrorAxis
@@ -1504,6 +1504,19 @@ BGD_DECLARE(gdImagePtr)
 gdImageCreateFromGd2PartPtr(int size, void *data, int srcx, int srcy, int w, int h);
 
 BGD_DECLARE(gdImagePtr) gdImageCreateFromXbm(FILE *in);
+
+
+/**
+ * Writes an image to an IO context in X11 bitmap format.
+ *
+ * @param image     The <gdImagePtr> to write.
+ * @param file_name The prefix of the XBM's identifiers. Illegal characters are
+ *                  automatically stripped.
+ * @param fg        Which color to use as forground color. All pixels with another
+ *                  color are unset.
+ * @param out       The <gdIOCtx> to write the image file to.
+ *
+ */
 BGD_DECLARE(void)
 gdImageXbmCtx(gdImagePtr image, char *file_name, int fg, gdIOCtxPtr out);
 
@@ -1648,30 +1661,159 @@ BGD_DECLARE(void *) gdImageGd2Ptr(gdImagePtr im, int cs, int fmt, int *size);
 
 BGD_DECLARE(void) gdImageDestroy(gdImagePtr im);
 
-/* These functions still work with truecolor images,
-   for which they never return error. */
+/**
+ * @brief Allocates a color
+ *
+ * This is a simplified variant of <gdImageColorAllocateAlpha> where the alpha
+ * channel is always opaque.
+ *
+ * @param im The image.
+ * @param r  The value of the red component.
+ * @param g  The value of the green component.
+ * @param b  The value of the blue component.
+ *
+ * @return The color value.
+ *
+ * @see gdImageColorDeallocate
+ */
 BGD_DECLARE(int) gdImageColorAllocate(gdImagePtr im, int r, int g, int b);
-/* gd 2.0: palette entries with non-opaque transparency are permitted. */
+
+/**
+ * @brief Allocates a color
+ *
+ * This is typically used for palette images, but can be used for truecolor
+ * images as well.
+ *
+ * @param im The image.
+ * @param r  The value of the red component.
+ * @param g  The value of the green component.
+ * @param b  The value of the blue component.
+ *
+ * @return The color value.
+ *
+ * @see gdImageColorDeallocate
+ */
 BGD_DECLARE(int)
 gdImageColorAllocateAlpha(gdImagePtr im, int r, int g, int b, int a);
-/* Assumes opaque is the preferred alpha channel value */
+
+/** @brief Gets the closest color of the image
+ *
+ * This is a simplified variant of <gdImageColorClosestAlpha> where the alpha
+ * channel is always opaque.
+ *
+ * @param im The image.
+ * @param r  The value of the red component.
+ * @param g  The value of the green component.
+ * @param b  The value of the blue component.
+ * 
+ * @return The closest color already available in the palette for palette images;
+ *         the color value of the given components for truecolor images.
+ *
+ * @see gdImageColorExact
+ */
 BGD_DECLARE(int) gdImageColorClosest(gdImagePtr im, int r, int g, int b);
-/* Closest match taking all four parameters into account.
-   A slightly different color with the same transparency
-   beats the exact same color with radically different
-   transparency */
+
+/**
+ * @brief Gets the closest color of the image with alpha channel
+ *
+ * @param im The image.
+ * @param r  The value of the red component.
+ * @param g  The value of the green component.
+ * @param b  The value of the blue component.
+ * @param a  The value of the alpha component.
+ *
+ * @return The closest color already available in the palette for palette images;
+ *         the color value of the given components for truecolor images.
+ *
+ * @see gdImageColorExactAlpha
+ */
 BGD_DECLARE(int)
 gdImageColorClosestAlpha(gdImagePtr im, int r, int g, int b, int a);
-/* An alternate method */
+
+/**
+ * @brief Gets the closest color of the image using HWB color space
+ * 
+ * This function finds the closest color in the image's palette to the specified RGB color using the HWB (Hue, Whiteness, Blackness) color space. It is a more perceptually accurate method for color matching compared to simple RGB distance calculations.
+ *
+ * @param im The image.
+ * @param r  The value of the red component.
+ * @param g  The value of the green component.
+ * @param b  The value of the blue component.
+ *
+ * @return The closest color already available in the palette for palette images; if
+ *         there is no exact color, -1 is returned.
+ *         For truecolor images the color value of the given components is returned.
+ *
+ * @see gdImageColorExact
+ */
 BGD_DECLARE(int) gdImageColorClosestHWB(gdImagePtr im, int r, int g, int b);
-/* Returns exact, 100% opaque matches only */
+
+/**
+ * @brief Gets the exact color of the image
+ *
+ * This is a simplified variant of <gdImageColorExactAlpha> where the alpha
+ * channel is always opaque.
+ *
+ * @param im The image.
+ * @param r  The value of the red component.
+ * @param g  The value of the green component.
+ * @param b  The value of the blue component.
+ *
+ * @return The exact color already available in the palette for palette images; if
+ *         there is no exact color, -1 is returned.
+ *         For truecolor images the color value of the given components is returned.
+ *
+ * @see gdImageColorClosest
+ */
 BGD_DECLARE(int) gdImageColorExact(gdImagePtr im, int r, int g, int b);
-/* Returns an exact match only, including alpha */
+
+/**
+ * @brief Gets the exact color of the image
+ *
+ * This is a simplified variant of <gdImageColorExactAlpha> where the alpha
+ * channel is always opaque.
+ *
+ * @param im The image.
+ * @param r  The value of the red component.
+ * @param g  The value of the green component.
+ * @param b  The value of the blue component.
+ * @param a  The value of the alpha component.
+ *
+ * @return The exact color already available in the palette for palette images; if
+ *         there is no exact color, -1 is returned.
+ *         For truecolor images the color value of the given components is returned.
+ *
+ * @see gdImageColorClosestAlpha gdTrueColorAlpha
+ */
 BGD_DECLARE(int)
 gdImageColorExactAlpha(gdImagePtr im, int r, int g, int b, int a);
-/* Opaque only */
+
+/**
+ * @brief Resolves a color in the image
+ * @see gdImageColorResolve is an alternative for the code fragment
+ * @code
+ *  if ((color=gdImageColorExact(im,R,G,B)) < 0)
+ *      if ((color=gdImageColorAllocate(im,R,G,B)) < 0)
+ *          color=gdImageColorClosest(im,R,G,B);
+ * @endcode
+ * in a single function.    Its advantage is that it is guaranteed to
+ * @return a color index in one search over the color table.
+  */
 BGD_DECLARE(int) gdImageColorResolve(gdImagePtr im, int r, int g, int b);
-/* Based on gdImageColorExactAlpha and gdImageColorClosestAlpha */
+
+/**
+ * @brief Same as @ref gdImageColorResovle but with alpha
+ * 
+ * @param im The image.
+ * @param r The red component.
+ * @param g The green component.
+ * @param b The blue component.
+ * @param a The alpha component.
+ * 
+ * @return The color index of the closest color in the palette or the newly allocated color.
+ * 
+ * @see gdImageColorExactAlpha gdImageColorClosestAlpha gdTrueColorAlpha
+ */
 BGD_DECLARE(int)
 gdImageColorResolveAlpha(gdImagePtr im, int r, int g, int b, int a);
 
@@ -1682,86 +1824,43 @@ gdImageColorResolveAlpha(gdImagePtr im, int r, int g, int b, int a);
 
 /**
  * Group: Color Composition
+ */
+
+/**
+ * @brief Compose a truecolor value from its components
  *
- * Macro: gdTrueColorAlpha
+ * @param r The red channel (0-255)
+ * @param g The green channel (0-255)
+ * @param b The blue channel (0-255)
+ * @param a The alpha channel (0-127, where 127 is fully transparent, and 0 is
+ *          completely opaque).
  *
- * Compose a truecolor value from its components
- *
- * Parameters:
- *   r - The red channel (0-255)
- *   g - The green channel (0-255)
- *   b - The blue channel (0-255)
- *   a - The alpha channel (0-127, where 127 is fully transparent, and 0 is
- *       completely opaque).
- *
- * See also:
- *   - <gdTrueColorGetAlpha>
- *   - <gdTrueColorGetRed>
- *   - <gdTrueColorGetGreen>
- *   - <gdTrueColorGetBlue>
- *   - <gdImageColorExactAlpha>
+ * @see gdTrueColorGetAlpha gdTrueColorGetRed gdTrueColorGetGreen gdTrueColorGetBlue gdImageColorExactAlpha
  */
 #define gdTrueColorAlpha(r, g, b, a) (((a) << 24) + ((r) << 16) + ((g) << 8) + (b))
 
+/**
+ * @brief Removes a palette entry
+ *
+ * This is a no-op for truecolor images.
+ * The function does not alter the image data nor the transparent color or any
+ * other places where this color index could have been referenced.
+ * The index is marked as open and will be used too for any subsequent
+ * @ref gdImageColorAllocate or @ref gdImageColorAllocateAlpha calls. Other lower
+ * index may be open as well, the fist open index found will be used.
+ *
+ * @param im    The image.
+ * @param color The palette index.
+ *
+ * @see gdImageColorAllocate gdImageColorAllocateAlpha
+ */
 BGD_DECLARE(void) gdImageColorDeallocate(gdImagePtr im, int color);
-
-/* Converts a truecolor image to a palette-based image,
-   using a high-quality two-pass quantization routine
-   which attempts to preserve alpha channel information
-   as well as R/G/B color information when creating
-   a palette. If ditherFlag is set, the image will be
-   dithered to approximate colors better, at the expense
-   of some obvious "speckling." colorsWanted can be
-   anything up to 256. If the original source image
-   includes photographic information or anything that
-   came out of a JPEG, 256 is strongly recommended.
-
-   Better yet, don't use these function -- write real
-   truecolor PNGs and JPEGs. The disk space gain of
-   conversion to palette is not great (for small images
-   it can be negative) and the quality loss is ugly.
-
-   DIFFERENCES: gdImageCreatePaletteFromTrueColor creates and
-   returns a new image. gdImageTrueColorToPalette modifies
-   an existing image, and the truecolor pixels are discarded.
-
-   gdImageTrueColorToPalette() returns TRUE on success, FALSE on failure.
-*/
-BGD_DECLARE(gdImagePtr)
-gdImageCreatePaletteFromTrueColor(gdImagePtr im, int ditherFlag, int colorsWanted);
-
-BGD_DECLARE(int)
-gdImageTrueColorToPalette(gdImagePtr im, int ditherFlag, int colorsWanted);
-
-BGD_DECLARE(int) gdImagePaletteToTrueColor(gdImagePtr src);
 
 /* An attempt at getting the results of gdImageTrueColorToPalette to
  * look a bit more like the original (im1 is the original and im2 is
  * the palette version */
 
 BGD_DECLARE(int) gdImageColorMatch(gdImagePtr im1, gdImagePtr im2);
-
-/* Selects quantization method used for subsequent gdImageTrueColorToPalette
-   calls. See gdPaletteQuantizationMethod enum (e.g. GD_QUANT_NEUQUANT,
-   GD_QUANT_LIQ). Speed is from 1 (highest quality) to 10 (fastest). Speed 0
-   selects method-specific default (recommended).
-
-   Returns FALSE if the given method is invalid or not available.
-*/
-BGD_DECLARE(int)
-gdImageTrueColorToPaletteSetMethod(gdImagePtr im, int method, int speed);
-
-/*
-  Chooses quality range that subsequent call to gdImageTrueColorToPalette will
-  aim for. Min and max quality is in range 1-100 (1 = ugly, 100 = perfect). Max
-  must be higher than min. If palette cannot represent image with at least
-  min_quality, then image will remain true-color. If palette can represent image
-  with quality better than max_quality, then lower number of colors will be
-  used. This function has effect only when GD_QUANT_LIQ method has been selected
-  and the source image is true-color.
-*/
-BGD_DECLARE(void)
-gdImageTrueColorToPaletteSetQuality(gdImagePtr im, int min_quality, int max_quality);
 
 /* Specifies a color index (if a palette image) or an
    RGB color (if a truecolor image) which should be
@@ -1772,82 +1871,323 @@ gdImageTrueColorToPaletteSetQuality(gdImagePtr im, int min_quality, int max_qual
    a truecolor image. Note that gdImageColorTransparent
    is usually compatible with older browsers that
    do not understand full alpha channels well. TBB */
+
+/**
+ * @brief Sets the transparent color of the image
+ *
+ * 
+ * Specifies a color index (if a palette image) or an
+ * RGB color (if a truecolor image) which should be
+ * considered 100% transparent. FOR TRUECOLOR IMAGES,
+ * THIS IS IGNORED IF AN ALPHA CHANNEL IS BEING
+ * SAVED. Use gdImageSaveAlpha(im, 0); to
+ * turn off the saving of a full alpha channel in
+ * a truecolor image. Note that gdImageColorTransparent
+ * is usually compatible with older browsers that
+ * do not understand full alpha channels well. TBB
+ * 
+ * @param im    The image.
+ * @param color The color.
+ *
+ * @see gdImageGetTransparent
+ */
 BGD_DECLARE(void) gdImageColorTransparent(gdImagePtr im, int color);
 
+/**
+ * @brief Copies the palette from one image to another
+ *
+ * @param dst The destination image.
+ * @param src The source image.
+ */
 BGD_DECLARE(void) gdImagePaletteCopy(gdImagePtr dst, gdImagePtr src);
 
 typedef int (*gdCallbackImageColor)(gdImagePtr im, int src);
 
+/**
+ * @brief Replaces a color in the image with another color
+ * 
+ * @param im  The image.
+ * @param src The source color to be replaced.
+ * @param dst The destination color to replace with.
+ */
 BGD_DECLARE(int) gdImageColorReplace(gdImagePtr im, int src, int dst);
+
+/**
+ * @brief Replaces colors in an image with a threshold for perceptual color distance.
+ *
+ * Note: threshold semantics changed in versions >=2.3.4 — the value now scales
+ * linearly with perceptual color distance. Callers using threshold values
+ * tuned against the old behavior should apply new_t = sqrt(old_t / 100) * 100
+ * to approximate the previous behavior. This is due to a bug fix in the color
+ * distance calculation, which previously did not take the square root
+ * of the sum of squares, and thus returned a value that was the square
+ * of the actual perceptual color distance.
+ * The new behavior is more intuitive and consistent with common color distance metrics
+ * 
+ * @param im The image to operate on.
+ * @param src The source color to replace.
+ * @param dst The destination color to replace with.
+ * @param threshold The threshold for color matching. Colors within this distance from the source color will be replaced with the destination color.
+ * @return The number of pixels that were replaced.
+ */
 BGD_DECLARE(int)
 gdImageColorReplaceThreshold(gdImagePtr im, int src, int dst, float threshold);
+
+/**
+ * @brief Replaces multiple colors in an image with corresponding destination colors.
+ * 
+ * @param im The image to operate on.
+ * @param len The number of colors to replace.
+ * @param src An array of source colors to be replaced.
+ * @param dst An array of destination colors to replace with.
+ * 
+ * @return The number of pixels that were replaced.
+ */
 BGD_DECLARE(int)
 gdImageColorReplaceArray(gdImagePtr im, int len, int *src, int *dst);
+
+/**
+ * @brief Replaces colors in an image using a callback function to determine the replacement color.
+ * 
+ * @param im The image to operate on.
+ * @param callback A callback function that takes the image and a source color as parameters and returns the destination color to replace with. @see gdCallbackImageColor
+ * 
+ * @return The number of pixels that were replaced.
+ */
 BGD_DECLARE(int)
 gdImageColorReplaceCallback(gdImagePtr im, gdCallbackImageColor callback);
 
-/* Replaces or blends with the background depending on the
-   most recent call to gdImageAlphaBlending and the
-   alpha channel value of 'color'; default is to overwrite.
-   Tiling and line styling are also implemented
-   here. All other gd drawing functions pass through this call,
-   allowing for many useful effects.
-   Overlay and multiply effects are used when gdImageAlphaBlending
-   is passed gdEffectOverlay and gdEffectMultiply */
+/**
+ * @defgroup  Per Pixel Operations
+ * @{ */
 
+/**
+ * @brief Sets the pixel at the specified coordinates to the given color.
+ * Replaces or blends with the background depending on the
+ * most recent call to @ref gdImageAlphaBlending and the
+ * alpha channel value of 'color'; default is to overwrite.
+ * Tiling and line styling are also implemented
+ * here. All other gd drawing functions pass through this call,
+ * allowing for many useful effects.
+ * Overlay and multiply effects are used when @ref gdImageAlphaBlending
+ * is passed @ref gdEffectOverlay and @ref gdEffectMultiply 
+ * 
+ * @param im The image.
+ * @param x The x-coordinate of the pixel.
+ * @param y The y-coordinate of the pixel.
+ * @param color The color to set the pixel to. Color can be a palette index for palette images or a truecolor value for truecolor images.
+ * 
+ * @see @ref gdImageGetPixel gdImageGetTrueColorPixel gdImageAlphaBlending gdImageCreateTruecolor gdImageCreatePalette
+ */
 BGD_DECLARE(void) gdImageSetPixel(gdImagePtr im, int x, int y, int color);
-
+/**
+ * @brief Gets the color of the pixel at the specified coordinates.
+ * 
+ * @param im The image.
+ * @param x The x-coordinate of the pixel.
+ * @param y The y-coordinate of the pixel.
+ * 
+ * @return The color of the pixel. For palette images, this is the palette index. For truecolor images, this is the truecolor value.
+ */
 BGD_DECLARE(int) gdImageGetPixel(gdImagePtr im, int x, int y);
+
+/**
+ * @brief Gets the truecolor value of the pixel at the specified coordinates.
+ * 
+ * @param im The image.
+ * @param x The x-coordinate of the pixel.
+ * @param y The y-coordinate of the pixel.
+ * 
+ * @return The truecolor value of the pixel. For palette images, this function will return the truecolor value corresponding to the palette index of the pixel.
+ */
 BGD_DECLARE(int) gdImageGetTrueColorPixel(gdImagePtr im, int x, int y);
+/** @} */
 
-BGD_DECLARE(void) gdImageAABlend(gdImagePtr im);
-
-BGD_DECLARE(void) gdImageLine(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
-
-/* For backwards compatibility only. Use gdImageSetStyle()
-   for much more flexible line drawing. */
-BGD_DECLARE(void) gdImageDashedLine(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
-/* Corners specified (not width and height). Upper left first, lower right
-   second. */
-BGD_DECLARE(void) gdImageRectangle(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
-/* Solid bar. Upper left corner first, lower right corner second. */
-BGD_DECLARE(void) gdImageFilledRectangle(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
-BGD_DECLARE(void) gdImageSetClip(gdImagePtr im, int x1, int y1, int x2, int y2);
-BGD_DECLARE(void) gdImageGetClip(gdImagePtr im, int *x1P, int *y1P, int *x2P, int *y2P);
+/**
+ * @brief Sets the resolution of an image.
+ *
+ * @param im    The image.
+ * @param res_x The horizontal resolution in DPI.
+ * @param res_y The vertical resolution in DPI.
+ *
+ * @see gdImageResolutionX gdImageResolutionY
+ */
 BGD_DECLARE(void)
 gdImageSetResolution(gdImagePtr im, const unsigned int res_x, const unsigned int res_y);
+
+/**
+ * @defgroup Font Text Rendering, Bitmap Fonts
+ *
+ * @{ */
+
+/**
+ * @brief Gets the built-in giant font.
+ */
+BGD_DECLARE(gdFontPtr) gdFontGetGiant(void);
+/**
+ * @brief Gets the built-in large font.
+ */
+BGD_DECLARE(gdFontPtr) gdFontGetLarge(void);
+/**
+ * @brief Gets the built-in medium bold font.
+ */
+BGD_DECLARE(gdFontPtr) gdFontGetMediumBold(void);
+/**
+ * @brief Gets the built-in small font.
+ */
+BGD_DECLARE(gdFontPtr) gdFontGetSmall(void);
+/**
+ * @brief Gets the built-in tiny font.
+ */
+BGD_DECLARE(gdFontPtr) gdFontGetTiny(void);
+/**
+ * @brief Draws a single character.
+ *
+ * @param im    The image to draw onto.
+ * @param f     The raster font.
+ * @param x     The x coordinate of the upper left pixel.
+ * @param y     The y coordinate of the upper left pixel.
+ * @param c     The character.
+ * @param color The color.
+ *
+ * Variants @ref gdImageCharUp
+ *
+ * @see gdFontPtr
+ */
 BGD_DECLARE(void) gdImageChar(gdImagePtr im, gdFontPtr f, int x, int y, int c, int color);
+
+/**
+ * @brief Draws a single character rotated 90 degrees counterclockwise.
+ * 
+ * @param im    The image to draw onto.
+ * @param f     The raster font.
+ * @param x     The x coordinate of the upper left pixel.
+ * @param y     The y coordinate of the upper left pixel.
+ * @param c     The character.
+ * @param color The color.
+ */
 BGD_DECLARE(void) gdImageCharUp(gdImagePtr im, gdFontPtr f, int x, int y, int c, int color);
+
+/**
+ * @brief Draws a character string.
+ *
+ * @param im    The image to draw onto.
+ * @param f     The raster font.
+ * @param x     The x coordinate of the upper left pixel.
+ * @param y     The y coordinate of the upper left pixel.
+ * @param s     The character string.
+ * @param color The color.
+ *
+ * Variants:
+ *  - @ref gdImageStringUp
+ *  - @ref gdImageString16
+ *  - @ref gdImageStringUp16
+ *
+ * @see gdFontPtr gdImageStringTTF gdImageString
+ */
 BGD_DECLARE(void)
 gdImageString(gdImagePtr im, gdFontPtr f, int x, int y, unsigned char *s, int color);
+
+/**
+ * @brief Draws a string rotated 90 degrees counterclockwise.
+ *
+ * @param im    The image to draw onto.
+ * @param f     The raster font.
+ * @param x     The x coordinate of the upper left pixel.
+ * @param y     The y coordinate of the upper left pixel.
+ * @param s     The string.
+ * @param color The color.
+ */
 BGD_DECLARE(void)
 gdImageStringUp(gdImagePtr im, gdFontPtr f, int x, int y, unsigned char *s, int color);
+
+/**
+ * @brief Draws a character string with 16-bit characters.
+ * 
+ * @param im    The image to draw onto.
+ * @param f     The raster font.
+ * @param x     The x coordinate of the upper left pixel.
+ * @param y     The y coordinate of the upper left pixel.
+ * @param s     The character string (16-bit).
+ * @param color The color.
+ */
 BGD_DECLARE(void)
 gdImageString16(gdImagePtr im, gdFontPtr f, int x, int y, unsigned short *s, int color);
+
+/**
+ * @brief Draws a string rotated 90 degrees counterclockwise with 16-bit characters.
+ * 
+ * @param im    The image to draw onto.
+ * @param f     The raster font.
+ * @param x     The x coordinate of the upper left pixel.
+ * @param y     The y coordinate of the upper left pixel.
+ * @param s     The string (16-bit).
+ * @param color The color.
+ */
 BGD_DECLARE(void)
 gdImageStringUp16(gdImagePtr im, gdFontPtr f, int x, int y, unsigned short *s, int color);
+/** @} */
 
-/* 2.0.16: for thread-safe use of gdImageStringFT and friends,
-   call this before allowing any thread to call gdImageStringFT.
-   Otherwise it is invoked by the first thread to invoke
-   gdImageStringFT, with a very small but real risk of a race condition.
-   Return 0 on success, nonzero on failure to initialize freetype. */
+/**
+ * @defgroup freetypefont Font Text Rendering, FreeType 2
+ * @{
+ */
+
+/**
+ * @brief Set up the font cache.
+ *
+ * This is called automatically from the string rendering functions, if it
+ * has not already been called. So there's no need to call this function
+ * explicitly.
+ */
 BGD_DECLARE(int) gdFontCacheSetup(void);
 
-/* Optional: clean up after application is done using fonts in
-   gdImageStringFT(). */
+
+/**
+ * @brief Shut down the font cache and free the allocated resources.
+ *
+ * @note This function has to be called whenever FreeType operations have been invoked, to avoid resource leaks. It doesn't harm to call this function multiple times.
+ */
 BGD_DECLARE(void) gdFontCacheShutdown(void);
-/* 2.0.20: for backwards compatibility. A few applications did start calling
-   this function when it first appeared although it was never documented.
-   Simply invokes gdFontCacheShutdown. */
+
+/**
+ * @brief Alias of @ref gdFontCacheShutdown.
+ * @deprecated
+ */
 BGD_DECLARE(void) gdFreeFontCache(void);
 
-/* Calls gdImageStringFT. Provided for backwards compatibility only. */
+
+/**
+ * @brief Draws a string using FreeType 2 fonts. Alias of @ref gdImageStringFT. Provided for backwards compatibility only. 
+ * @deprecated
+ */
 BGD_DECLARE(char *)
 gdImageStringTTF(gdImagePtr im, int *brect, int fg, const char *fontlist, double ptsize,
                  double angle, int x, int y, const char *string);
 
-/* FreeType 2 text output */
+
+/**
+ * @brief Render an UTF-8 string onto a gd image.
+ *
+ * @param im       The image to draw onto.
+ * @param brect    The bounding rectangle as array of 8 integers where each pair
+ *                 represents the x- and y-coordinate of a point. The points
+ *                 specify the lower left, lower right, upper right and upper left
+ *                 corner.
+ * @param fg       The font color.
+ * @param fontlist The semicolon delimited list of font filenames to look for.
+ * @param ptsize   The height of the font in typographical points (pt).
+ * @param angle    The angle in radian to rotate the font counter-clockwise.
+ * @param x        The x-coordinate of the basepoint (roughly the lower left corner)
+ *                   of the first letter.
+ * @param y        The y-coordinate of the basepoint (roughly the lower left corner)
+ *                   of the first letter.
+ * @param string   The string to render.
+ *
+ * Variant @ref gdImageStringFTEx
+ *
+ * @see gdImageString
+ */
 BGD_DECLARE(char *)
 gdImageStringFT(gdImagePtr im, int *brect, int fg, const char *fontlist, double ptsize,
                 double angle, int x, int y, const char *string);
@@ -1917,67 +2257,143 @@ typedef struct {
    when the call is made */
 #define gdFTEX_RETURNFONTPATHNAME 128
 
-/* If flag is nonzero, the fontlist parameter to gdImageStringFT
-   and gdImageStringFTEx shall be assumed to be a fontconfig font pattern
-   if fontconfig was compiled into gd. This function returns zero
-   if fontconfig is not available, nonzero otherwise. */
+/* 
+
+ */
+
+/**
+ * @brief Enable or disable fontconfig by default.
+ * 
+ * If flag is nonzero, the fontlist parameter to gdImageStringFT
+ * and gdImageStringFTEx shall be assumed to be a fontconfig font pattern
+ * if fontconfig was compiled into gd. This function returns zero
+ * if fontconfig is not available, nonzero otherwise.
+ * If GD is built without libfontconfig support, this function is a NOP.
+ *
+ * @param flag Zero to disable, nonzero to enable.
+ *
+ * @see gdImageStringFTEx
+ */
 BGD_DECLARE(int) gdFTUseFontConfig(int flag);
 
 /* These are NOT flags; set one in 'charmap' if you set the
    gdFTEX_CHARMAP bit in 'flags'. */
-#define gdFTEX_Unicode 0
-#define gdFTEX_Shift_JIS 1
-#define gdFTEX_Big5 2
-#define gdFTEX_Adobe_Custom 3
-/* Deprecated compatibility name used by bundled PHP's historical libgd. */
-#define gdFTEX_MacRoman gdFTEX_Adobe_Custom
+#define gdFTEX_Unicode 0 /**< Unicode character map */
+#define gdFTEX_Shift_JIS 1 /**< Shift_JIS character map */
+#define gdFTEX_Big5 2 /**< Big5 character map */
+#define gdFTEX_Adobe_Custom 3 /**< Adobe Custom character map */
+#define gdFTEX_MacRoman gdFTEX_Adobe_Custom /**< Deprecated compatibility name used by bundled PHP's historical libgd. */
 
+/**
+ * @brief Draws a string using FreeType 2 fonts with additional parameters.
+ * 
+ * @param im       The image to draw onto.
+ * @param brect    The bounding rectangle as array of 8 integers where each pair
+ *                 represents the x- and y-coordinate of a point. The points
+ *                 specify the lower left, lower right, upper right and upper left
+ *                 corner.
+ * @param fg       The font color.
+ * @param fontlist The semicolon delimited list of font filenames to look for.
+ * @param ptsize   The height of the font in typographical points (pt).
+ * @param angle    The angle in radian to rotate the font counter-clockwise.
+ * @param x        The x-coordinate of the basepoint (roughly the lower left corner)
+ *                   of the first letter.
+ * @param y        The y-coordinate of the basepoint (roughly the lower left corner)
+ *                   of the first letter.
+ * @param string   The string to render.
+ * @param strex    A pointer to a <gdFTStringExtra> structure containing additional parameters for rendering the string.
+ * 
+ * @return A pointer to a string containing an error message if an error occurred, or NULL if the operation was successful.
+ */
 BGD_DECLARE(char *)
 gdImageStringFTEx(gdImagePtr im, int *brect, int fg, const char *fontlist, double ptsize,
                   double angle, int x, int y, const char *string, gdFTStringExtraPtr strex);
 
-/*
-  Group: Types
-
-  typedef: gdPoint
-
-  typedef: gdPointPtr
-
-  Represents a point in the coordinate space of the image; used by
-  <gdImagePolygon>, <gdImageOpenPolygon> and <gdImageFilledPolygon>
-  for polygon drawing.
-
-  > typedef struct {
-  >     int x, y;
-  > } gdPoint, *gdPointPtr;
-
-*/
-typedef struct {
-    int x, y;
-} gdPoint, *gdPointPtr;
+/** @} */
 
 /**
- * Typedef: gdRect
- *
- * A rectangle in the coordinate space of the image
- *
- * Members:
- *   x      - The x-coordinate of the upper left corner.
- *   y      - The y-coordinate of the upper left corner.
- *   width  - The width.
- *   height - The height.
- *
- * Typedef: gdRectPtr
- *
- * A pointer to a <gdRect>
+ * @defgroup PixelDraw lines, ellipses, polygons and Arc Drawing pixel operations
+ * 
+ * @note 2.4+ brings a 2D Vector APIs with high quality rendering and options. Similar to Canvas 2D APIs. We recommend it for new usages.
+ * 
+ * @{
+ */
+
+ /**
+ * @brief A point in the coordinate space of the image
  */
 typedef struct {
-    int x, y;
-    int width, height;
-} gdRect, *gdRectPtr;
+    int x, y; /**< The x and y coordinates of the point. */
+} gdPoint, *gdPointPtr; /**< A pointer to a <gdPoint>. */
 
+/**
+ * @brief A rectangle in the coordinate space of the image
+  */
+typedef struct {
+    int x, y; /**< The x and y coordinates of the upper left corner. */
+    int width, height; /**< The width and height of the rectangle. */
+} gdRect, *gdRectPtr; /**< A pointer to a @ref gdRect. */
+
+
+/** 
+ * @brief Style flags for drawing arcs and chords
+ * Style is a bitwise OR ( | operator ) of these.
+ * gdArc and gdChord are mutually exclusive;
+ * gdChord just connects the starting and ending
+ * angles with a straight line, while gdArc produces
+ * a rounded edge. gdPie is a synonym for gdArc.
+ * gdNoFill indicates that the arc or chord should be
+ * outlined, not filled. gdEdged, used together with
+ * gdNoFill, indicates that the beginning and ending
+ * angles should be connected to the center; this is
+ * a good way to outline (rather than fill) a
+ * 'pie slice'.
+ */
+#define gdArc 0 /**< mutually exclusive with gdChord */
+#define gdPie gdArc /**< synonym for gdArc */
+#define gdChord 1 /**< mutually exclusive with gdArc */
+#define gdNoFill 2 /**< indicates that the arc or chord should be outlined, not filled */
+#define gdEdged 4 /**< used together with gdNoFill, indicates that the beginning and ending angles should be connected to the center */
+
+/**
+ * @brief Draws a closed polygon
+ *
+ * @param  im The image.
+ * @param  p  The vertices as array of <gdPoint>s.
+ * @param  n  The number of vertices.
+ * @param  c  The color.
+ *
+ * @see gdImageOpenPolygon gdImageFilledPolygon
+ */
 BGD_DECLARE(void) gdImagePolygon(gdImagePtr im, gdPointPtr p, int n, int c);
+
+/**
+ * @brief Draws an open polygon
+ *
+ * @param im The image.
+ * @param p  The vertices as array of <gdPoint>s.
+ * @param n  The number of vertices.
+ * @param c  The color.
+ *
+ * @see gdImagePolygon
+ */
 BGD_DECLARE(void) gdImageOpenPolygon(gdImagePtr im, gdPointPtr p, int n, int c);
+
+
+/**
+ * @brief Draws a filled polygon
+ *
+ * The polygon is filled using the even-odd fillrule what can leave unfilled
+ * regions inside of self-intersecting polygons. This behavior might change in
+ * a future version.
+ *
+ * @param  im The image.
+ * @param  p  The vertices as array of <gdPoint>s.
+ * @param  n  The number of vertices.
+ * @param  c  The color.
+ *
+ * @see gdImagePolygon
+ */
 BGD_DECLARE(void)
 gdImageFilledPolygon(gdImagePtr im, gdPointPtr p, int n, int c);
 
@@ -1985,124 +2401,512 @@ BGD_DECLARE(void)
 gdImageFilledArc(gdImagePtr im, int cx, int cy, int w, int h, int s, int e, int color, int style);
 BGD_DECLARE(void)
 gdImageArc(gdImagePtr im, int cx, int cy, int w, int h, int s, int e, int color);
+
+/**
+ * @brief Draw an ellipse, stroke only.
+ *
+ * @note This function does not support @ref gdImageSetThickness. GD 3.0 supports
+ * actual 2D vectors operation, you may rely on it if you need better 2D drawing
+ * operations.
+ *
+ * @param  im   The destination image.
+ * @param  cx   x-coordinate of the center.
+ * @param  cy   y-coordinate of the center.
+ * @param  w    The ellipse width.
+ * @param  h    The ellipse height.
+ * @param  color The color of the ellipse. A color identifier created with one of the
+ * image color allocate functions.
+ *
+ * @see gdImageFilledEllipse
+ */
 BGD_DECLARE(void)
 gdImageEllipse(gdImagePtr im, int cx, int cy, int w, int h, int color);
 BGD_DECLARE(void)
 gdImageFilledEllipse(gdImagePtr im, int cx, int cy, int w, int h, int color);
 
-/* Style is a bitwise OR ( | operator ) of these.
-   gdArc and gdChord are mutually exclusive;
-   gdChord just connects the starting and ending
-   angles with a straight line, while gdArc produces
-   a rounded edge. gdPie is a synonym for gdArc.
-   gdNoFill indicates that the arc or chord should be
-   outlined, not filled. gdEdged, used together with
-   gdNoFill, indicates that the beginning and ending
-   angles should be connected to the center; this is
-   a good way to outline (rather than fill) a
-   'pie slice'. */
-#define gdArc 0
-#define gdPie gdArc
-#define gdChord 1
-#define gdNoFill 2
-#define gdEdged 4
+BGD_DECLARE(void) gdImageAABlend(gdImagePtr im);
+
+BGD_DECLARE(void) gdImageLine(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
+
+/* For backwards compatibility only. Use gdImageSetStyle()
+   for much more flexible line drawing. */
+BGD_DECLARE(void) gdImageDashedLine(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
+/* Corners specified (not width and height). Upper left first, lower right
+   second. */
+
+/**
+ * @brief Draws a rectangle.
+ *
+ * @param  im    The image.
+ * @param  x1    The x-coordinate of one of the corners.
+ * @param  y1    The y-coordinate of one of the corners.
+ * @param  x2    The x-coordinate of another corner.
+ * @param  y2    The y-coordinate of another corner.
+ * @param  color The color.
+ *
+ * @see gdImageFilledRectangle
+ */
+BGD_DECLARE(void) gdImageRectangle(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
+/* Solid bar. Upper left corner first, lower right corner second. */
+BGD_DECLARE(void) gdImageFilledRectangle(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
+
+/**
+ * @brief Sets the clipping rectangle
+ *
+ * The clipping rectangle restricts the drawing area for following drawing
+ * operations.
+ *
+ * @param  im - The image.
+ * @param  x1 - The x-coordinate of the upper left corner.
+ * @param  y1 - The y-coordinate of the upper left corner.
+ * @param  x2 - The x-coordinate of the lower right corner.
+ * @param  y2 - The y-coordinate of the lower right corner.
+ *
+ * @see gdImageGetClip
+ */
+BGD_DECLARE(void) gdImageSetClip(gdImagePtr im, int x1, int y1, int x2, int y2);
+
+/**
+ * @brief Gets the current clipping rectangle
+ *
+ * @param  im   The image.
+ * @param  x1P  (out) The x-coordinate of the upper left corner.
+ * @param  y1P  (out) The y-coordinate of the upper left corner.
+ * @param  x2P  (out) The x-coordinate of the lower right corner.
+ * @param  y2P  (out) The y-coordinate of the lower right corner.
+ *
+ * @see gdImageSetClip
+ */
+BGD_DECLARE(void) gdImageGetClip(gdImagePtr im, int *x1P, int *y1P, int *x2P, int *y2P);
+
+/**
+ * @brief Sets the brush for following drawing operations
+ *
+ * @param  im    The image.
+ * @param  brush The brush image.
+ */
+BGD_DECLARE(void) gdImageSetBrush(gdImagePtr im, gdImagePtr brush);
+
+/**
+ * @brief Sets the tile for following drawing operations
+ * 
+ * The tile is used for filling areas with a repeating pattern. The tile image is repeated to fill the area being drawn.
+ * 
+ * @param  im   The image.
+ * @param  tile The tile image.
+ */
+BGD_DECLARE(void) gdImageSetTile(gdImagePtr im, gdImagePtr tile);
+
+
+/**
+ * @brief Set the color for subsequent anti-aliased drawing
+ *
+ * If @ref gdAntiAliased is passed as color to drawing operations that support
+ * anti-aliased drawing (such as @ref gdImageLine and @ref gdImagePolygon), the actual
+ * color to be used can be set with this function.
+ *
+ * Example: draw an anti-aliased blue line:
+ * @code
+ * gdImageSetAntiAliased(im, gdTrueColorAlpha(0, 0, gdBlueMax, gdAlphaOpaque));
+ * gdImageLine(im, 10,10, 20,20, gdAntiAliased);
+ * @endcode
+ *
+ * @param  im - The image.
+ * @param  c  - The color.
+ *
+ * @see gdImageSetAntiAliasedDontBlend
+ */
+BGD_DECLARE(void) gdImageSetAntiAliased(gdImagePtr im, int c);
+
+/**
+ * Set the color and "dont_blend" color for subsequent anti-aliased drawing
+ *
+ * This extended variant of <gdImageSetAntiAliased> allows to also specify a
+ * (background) color that will not be blended in anti-aliased drawing
+ * operations.
+ *
+ * @param im         The image.
+ * @param c          The color.
+ * @param dont_blend Whether to blend.
+ */
+BGD_DECLARE(void) gdImageSetAntiAliasedDontBlend(gdImagePtr im, int c, int dont_blend);
+
+/**
+ * @brief Sets the style for following drawing operations
+ *
+ * @param  im        The image.
+ * @param  style     An array of color values.
+ * @param  noOfPixel The number of color values.
+ */
+BGD_DECLARE(void) gdImageSetStyle(gdImagePtr im, int *style, int noOfPixels);
+
+
+/**
+ * Sets the thickness for following drawing operations
+ *
+ * @param  im        The image.
+ * @param  thickness The thickness in pixels.
+ */
+BGD_DECLARE(void) gdImageSetThickness(gdImagePtr im, int thickness);
+
+
+/** @} */
 
 BGD_DECLARE(void)
 gdImageFillToBorder(gdImagePtr im, int x, int y, int border, int color);
 BGD_DECLARE(void) gdImageFill(gdImagePtr im, int x, int y, int color);
+
+
+/** @defgroup cloneandcopy Clone, copy and image properties
+ * @{ */
+/**
+ * @brief Copy an area of an image to another image
+ *
+ * @param dst  - The destination image.
+ * @param src  - The source image.
+ * @param dstX - The x-coordinate of the upper left corner to copy to.
+ * @param dstY - The y-coordinate of the upper left corner to copy to.
+ * @param srcX - The x-coordinate of the upper left corner to copy from.
+ * @param srcY - The y-coordinate of the upper left corner to copy from.
+ * @param w    - The width of the area to copy.
+ * @param h    - The height of the area to copy.
+ *
+ * @see gdImageCopyMerge gdImageCopyMergeGray gdImageCopyResized gdImageCopyResampled gdImageCopyRotated gdImageScale gdImageScaleWithOptions
+ */
 BGD_DECLARE(void)
 gdImageCopy(gdImagePtr dst, gdImagePtr src, int dstX, int dstY, int srcX, int srcY, int w, int h);
+
+/**
+ * @brief Copy an area of an image to another image ignoring alpha
+ *
+ * The source area will be copied to the destination are by merging the pixels.
+ *
+ * @note This function is a substitute for real alpha channel operations, so it doesn't pay attention to the alpha channel.
+ *
+ * @param dst  The destination image.
+ * @param src  The source image.
+ * @param dstX The x-coordinate of the upper left corner to copy to.
+ * @param dstY The y-coordinate of the upper left corner to copy to.
+ * @param srcX The x-coordinate of the upper left corner to copy from.
+ * @param srcY The y-coordinate of the upper left corner to copy from.
+ * @param w    The width of the area to copy.
+ * @param h    The height of the area to copy.
+ * @param pct  The percentage in range 0..100.
+ *
+ * @see gdImageCopy  gdImageCopyMergeGray
+ */
 BGD_DECLARE(void)
 gdImageCopyMerge(gdImagePtr dst, gdImagePtr src, int dstX, int dstY, int srcX, int srcY, int w,
                  int h, int pct);
+
+
+/**
+ * @brief Copy an area of an image to another image ignoring alpha
+ *
+ * The source area will be copied to the grayscaled destination area by merging
+ * the pixels.
+ *
+ * @note This function is a substitute for real alpha channel operations, so it doesn't pay attention to the alpha channel.
+ *
+ * @param dst  - The destination image.
+ * @param src  - The source image.
+ * @param dstX - The x-coordinate of the upper left corner to copy to.
+ * @param dstY - The y-coordinate of the upper left corner to copy to.
+ * @param srcX - The x-coordinate of the upper left corner to copy from.
+ * @param srcY - The y-coordinate of the upper left corner to copy from.
+ * @param w    - The width of the area to copy.
+ * @param h    - The height of the area to copy.
+ * @param pct  - The percentage of the source color intensity in range 0..100.
+ *
+ * @see gdImageCopy gdImageCopyMerge
+ */
 BGD_DECLARE(void)
 gdImageCopyMergeGray(gdImagePtr dst, gdImagePtr src, int dstX, int dstY, int srcX, int srcY, int w,
                      int h, int pct);
 
-/* Stretches or shrinks to fit, as needed. Does NOT attempt
-   to average the entire set of source pixels that scale down onto the
-   destination pixel. */
+
+/**
+ * @brief Copy a resized area from an image to another image
+ *
+ * If the source and destination area differ in size, the area will be resized
+ * using nearest-neighbor interpolation.
+ *
+ * @param dst  The destination image.
+ * @param src  The source image.
+ * @param dstX The x-coordinate of the upper left corner to copy to.
+ * @param dstY The y-coordinate of the upper left corner to copy to.
+ * @param srcX The x-coordinate of the upper left corner to copy from.
+ * @param srcY The y-coordinate of the upper left corner to copy from.
+ * @param dstW The width of the area to copy to.
+ * @param dstH The height of the area to copy to.
+ * @param srcW The width of the area to copy from.
+ * @param srcH The height of the area to copy from.
+ *
+ * @see gdImageCopyResampled gdImageScale
+ */
 BGD_DECLARE(void)
 gdImageCopyResized(gdImagePtr dst, gdImagePtr src, int dstX, int dstY, int srcX, int srcY, int dstW,
                    int dstH, int srcW, int srcH);
 
-/* gd 2.0: stretches or shrinks to fit, as needed. When called with a
-   truecolor destination image, this function averages the
-   entire set of source pixels that scale down onto the
-   destination pixel, taking into account what portion of the
-   destination pixel each source pixel represents. This is a
-   floating point operation, but this is not a performance issue
-   on modern hardware, except for some embedded devices. If the
-   destination is a palette image, gdImageCopyResized is
-   substituted automatically. */
+/**
+ * @brief Copy a resampled area from an image to another image
+ *
+ * If the source and destination area differ in size, the area will be resized
+ * using bilinear interpolation for truecolor images, and nearest-neighbor
+ * interpolation for palette images.
+ *
+ * @param dst  The destination image.
+ * @param src  The source image.
+ * @param dstX The x-coordinate of the upper left corner to copy to.
+ * @param dstY The y-coordinate of the upper left corner to copy to.
+ * @param srcX The x-coordinate of the upper left corner to copy from.
+ * @param srcY The y-coordinate of the upper left corner to copy from.
+ * @param dstW The width of the area to copy to.
+ * @param dstH The height of the area to copy to.
+ * @param srcW The width of the area to copy from.
+ * @param srcH The height of the area to copy from.
+ *
+ * @see gdImageCopyResized gdImageScale
+ */
 BGD_DECLARE(void)
 gdImageCopyResampled(gdImagePtr dst, gdImagePtr src, int dstX, int dstY, int srcX, int srcY,
                      int dstW, int dstH, int srcW, int srcH);
 
-/* Source is a rectangle, with its upper left corner at
-   srcX and srcY. Destination is the *center* of
-   the rotated copy. Angle is in degrees, same as
-   gdImageArc. Floating point destination center
-   coordinates allow accurate rotation of
-   objects of odd-numbered width or height. */
+/**
+ * @brief Copy a rotated area from an image to another image
+ *
+ * The area is counter-clockwise rotated using nearest-neighbor interpolation.
+ *
+ * @param dst The destination image.
+ * @param src The source image.
+ * @param  dstX  The x-coordinate of the center of the area to copy to.
+ * @param  dstY  The y-coordinate of the center of the area to copy to.
+ * @param  srcX  The x-coordinate of the upper left corner to copy from.
+ * @param  srcY  The y-coordinate of the upper left corner to copy from.
+ * @param  srcW  The width of the area to copy from.
+ * @param  srcH  The height of the area to copy from.
+ * @param  angle The angle in degrees.
+ *
+ * @see gdImageRotateInterpolated
+ */
 BGD_DECLARE(void)
 gdImageCopyRotated(gdImagePtr dst, gdImagePtr src, double dstX, double dstY, int srcX, int srcY,
                    int srcWidth, int srcHeight, int angle);
 
+/**
+ * @brief Clones an image
+ *
+ * Creates an exact duplicate of the given image.
+ *
+ * @param src The source image.
+ *
+ * @returns The cloned image on success, NULL on failure.
+ */
 BGD_DECLARE(gdImagePtr) gdImageClone(gdImagePtr src);
 
-BGD_DECLARE(void) gdImageSetBrush(gdImagePtr im, gdImagePtr brush);
-BGD_DECLARE(void) gdImageSetTile(gdImagePtr im, gdImagePtr tile);
-BGD_DECLARE(void) gdImageSetAntiAliased(gdImagePtr im, int c);
-BGD_DECLARE(void) gdImageSetAntiAliasedDontBlend(gdImagePtr im, int c, int dont_blend);
-BGD_DECLARE(void) gdImageSetStyle(gdImagePtr im, int *style, int noOfPixels);
-
-/* Line thickness (defaults to 1). Affects lines, ellipses,
-   rectangles, polygons and so forth. */
-BGD_DECLARE(void) gdImageSetThickness(gdImagePtr im, int thickness);
-/* On or off (1 or 0) for all three of these. */
+/**
+ * @brief Sets whether an image is interlaced
+ *
+ * This is relevant only when saving the image in a format that supports
+ * interlacing.
+ *
+ * @param im            The image.
+ * @param interlaceArg  Whether the image is interlaced.
+ *
+ * @see gdImageGetInterlaced
+ */
 BGD_DECLARE(void) gdImageInterlace(gdImagePtr im, int interlaceArg);
+
+/** @} */
+
+/**
+ * @brief Sets the effect for subsequent drawing operations
+ *
+ * @note The effect is used for truecolor images only.
+ *
+ * @note in gd 2.4+, a configure flag is available to use the accurate and correct blending algorithm for truecolor images. This is the default behavior.
+ *       The old, faster, but less accurate algorithm can be used by configuring gd with --disable-accurate-blending.
+ * @param im The image.
+ * @param alphaBlendingArg The effect.
+ *
+ * Effects: @ref gdEffectOverlay, @ref gdEffectMultiply, @ref gdEffectNormal
+ * 
+ * 
+ */
 BGD_DECLARE(void) gdImageAlphaBlending(gdImagePtr im, int alphaBlendingArg);
+
+/**
+ * @brief Sets the save alpha flag
+ *
+ * The save alpha flag specifies whether the alpha channel of the pixels should
+ * be saved. This is supported only for image formats that support full alpha
+ * transparency, e.g. PNG.
+ * 
+ * @param im The image.
+ * @param saveAlphaArg The save alpha flag (1 to save alpha, 0 to not save alpha).
+ */
 BGD_DECLARE(void) gdImageSaveAlpha(gdImagePtr im, int saveAlphaArg);
 
 /**
- * Group: Color Quantization
+ * @defgroup  Color Quantization
+ * 
+ * @{ */
+
+ /**
+ * Note that @ref GD_QUANT_JQUANT does not retain the alpha channel, and
+ * @ref GD_QUANT_NEUQUANT does not support dithering.
  *
- * Enum: gdPaletteQuantizationMethod
- *
- * Constants:
- *   GD_QUANT_DEFAULT  - GD_QUANT_LIQ if libimagequant is available,
- *                       GD_QUANT_JQUANT otherwise.
- *   GD_QUANT_JQUANT   - libjpeg's old median cut. Fast, but only uses 16-bit
- *                       color.
- *   GD_QUANT_NEUQUANT - NeuQuant - approximation using Kohonen neural network.
- *   GD_QUANT_LIQ      - A combination of algorithms used in libimagequant
- *                       aiming for the highest quality at cost of speed.
- *
- * Note that GD_QUANT_JQUANT does not retain the alpha channel, and
- * GD_QUANT_NEUQUANT does not support dithering.
- *
- * See also:
- *   - <gdImageTrueColorToPaletteSetMethod>
+ * @see gdImageTrueColorToPaletteSetMethod
  */
 enum gdPaletteQuantizationMethod {
-    GD_QUANT_DEFAULT = 0,
-    GD_QUANT_JQUANT = 1,
-    GD_QUANT_NEUQUANT = 2,
-    GD_QUANT_LIQ = 3
+    GD_QUANT_DEFAULT = 0, /**< Default quantization method */
+    GD_QUANT_JQUANT = 1, /**< libjpeg's old median cut */
+    GD_QUANT_NEUQUANT = 2, /**< NeuQuant - approximation using Kohonen neural network */
+    GD_QUANT_LIQ = 3 /**< libimagequant combination aiming for highest quality */
 };
+
+
+/**
+ * @brief Creates a new palette image from a truecolor image
+ *
+ * This is the same as calling @ref gdImageCreatePaletteFromTrueColor with the
+ * quantization method @ref GD_QUANT_NEUQUANT.
+ *
+ * @param im            - The image.
+ * @param max_color     - The number of desired palette entries.
+ * @param sample_factor - The quantization precision between 1 (highest quality) and
+ *                        10 (fastest).
+ *
+ * @returns A newly create palette image; NULL on failure.
+ */
 BGD_DECLARE(gdImagePtr)
 gdImageNeuQuant(gdImagePtr im, const int max_color, int sample_factor);
 
-/* filters section
+
+/**  @brief Selects quantization method used for subsequent @ref gdImageTrueColorToPalette calls.
+ *
+ *   @details See @ref gdPaletteQuantizationMethod enum (e.g. @ref GD_QUANT_NEUQUANT,
+ *   @ref GD_QUANT_LIQ). Speed is from 1 (highest quality) to 10 (fastest). Speed 0
+ *   selects method-specific default (recommended).
+ * 
+ *   @param im The image to set the quantization method for.
+ *   @param method The quantization method to use.
+ *   @param speed The speed/quality tradeoff for the selected method.
+ * 
+ *   @returns FALSE if the given method is invalid or not available.
+ */
+BGD_DECLARE(int)
+gdImageTrueColorToPaletteSetMethod(gdImagePtr im, int method, int speed);
+
+/**
+ * @brief Sets the quality range for subsequent @ref gdImageTrueColorToPalette calls.
+ * @details  Chooses quality range that subsequent call to @ref gdImageTrueColorToPalette will
+ * aim for. Min and max quality is in range 1-100 (1 = ugly, 100 = perfect). Max
+ * must be higher than min. If palette cannot represent image with at least
+ * min_quality, then image will remain true-color. If palette can represent image
+ * with quality better than max_quality, then lower number of colors will be
+ * used. This function has effect only when @ref GD_QUANT_LIQ method has been selected
+ * and the source image is true-color.
+ *
+ *   @param im           The image.
+ *   @param min_quality  The minimum quality in range 1-100 (1 = ugly, 100 = perfect).
+ *                       If the palette cannot represent the image with at least
+ *                       min_quality, then no conversion is done.
+ *   @param max_quality  The maximum quality in range 1-100 (1 = ugly, 100 = perfect),
+ *                       which must be higher than the min_quality. If the palette can
+ *                       represent the image with a quality better than max_quality,
+ *                       then fewer colors than requested will be used.
+ */
+BGD_DECLARE(void)
+gdImageTrueColorToPaletteSetQuality(gdImagePtr im, int min_quality, int max_quality);
+
+
+/** 
+ * @brief Converts a truecolor image to a palette-based image.
+ * @details This function converts a truecolor image to a palette-based image
+ * using a high-quality two-pass quantization routine
+ * which attempts to preserve alpha channel information
+ * as well as R/G/B color information when creating
+ * a palette. If ditherFlag is set, the image will be
+ * dithered to approximate colors better, at the expense
+ * of some obvious "speckling." colorsWanted can be
+ * anything up to 256. If the original source image
+ * includes photographic information or anything that
+ * came out of a JPEG, 256 is strongly recommended.
+ * 
+ * Better yet, don't use these function -- write real
+ * truecolor PNGs and JPEGs. The disk space gain of
+ * conversion to palette is not great (for small images
+ * it can be negative) and the quality loss is ugly.
+ *
+ * DIFFERENCES: @ref gdImageCreatePaletteFromTrueColor creates and
+ * returns a new image. @ref gdImageTrueColorToPalette modifies
+ * an existing image, and the truecolor pixels are discarded.
+ *
+ * @param im           The image.
+ * @param dither       Whether dithering should be applied.
+ * @param colorsWanted The number of desired palette entries.
+ * 
+ * @returns a newly created palette image on success, NULL on failure.
+ */
+BGD_DECLARE(gdImagePtr)
+gdImageCreatePaletteFromTrueColor(gdImagePtr im, int ditherFlag, int colorsWanted);
+
+
+/**
+ * @brief Converts a truecolor image to a palette image
+ *
+ * @param im           The image.
+ * @param dither       Whether dithering should be applied.
+ * @param colorsWanted The number of desired palette entries.
+ *
+ * @return Non-zero if the conversion succeeded, zero otherwise.
+ *
+ * @see gdImageCreatePaletteFromTrueColor gdImageTrueColorToPaletteSetMethod  gdImagePaletteToTrueColor
+ */
+BGD_DECLARE(int)
+gdImageTrueColorToPalette(gdImagePtr im, int ditherFlag, int colorsWanted);
+
+/** @brief Converts a palette-based image to a truecolor image 
+ * 
+ * @details This function converts a palette-based image to a truecolor image. The
+ * palette is discarded, and the image is converted to truecolor. The alpha channel
+ * information is preserved.
+ * @param src The source image.
+ * @return Non-zero if the conversion succeeded, zero otherwise.
+ *
+ */
+BGD_DECLARE(int) gdImagePaletteToTrueColor(gdImagePtr src);
+
+/** @} */
+
+/**
+ * @defgroup  ImageFilters Image Filters and convolutions
+ * @{ */
+/*
+ * @brief @ref gdImagePixelate options
  *
  * Negate the imag src, white becomes black,
  * The red, green, and blue intensities of an image are negated.
  * White becomes black, yellow becomes blue, etc.
  */
 
-enum gdPixelateMode { GD_PIXELATE_UPPERLEFT, GD_PIXELATE_AVERAGE };
-
+enum gdPixelateMode { 
+    GD_PIXELATE_UPPERLEFT, /**< Use the upper-left pixel of each block */
+    GD_PIXELATE_AVERAGE /**< Use the average color of each block */
+};
+/**
+ * @brief Pixelates an image
+ * 
+ * Pixelates an image by dividing it into blocks of the specified size and replacing each block with a single color.
+ * The color can be determined by either the upper-left pixel of the block or the average color of all pixels in the block, depending on the mode specified.
+ * 
+ * @param im The image to pixelate.
+ * @param block_size The size of the blocks to use for pixelation. Must be greater than 0.
+ * @param mode The mode to use for determining the color of each block. @ref gdPixelateMode
+ * 
+ * @return Non-zero on success, zero on failure. Failure: Returns zero if im is NULL or block_size is less than or equal to 0.
+ */
 BGD_DECLARE(int)
 gdImagePixelate(gdImagePtr im, int block_size, const unsigned int mode);
 
@@ -2120,196 +2924,168 @@ gdImageScatterColor(gdImagePtr im, int sub, int plus, int colors[], unsigned int
 BGD_DECLARE(int) gdImageScatterEx(gdImagePtr im, gdScatterPtr s);
 
 /**
- * Function: gdImageSmooth
+ * @brief Smooth an image
+ *
+ * (see smooth.jpg)
+ *
+ * @param im     The image.
+ * @param weight The strength of the smoothing.
+ *
+ * @return Non-zero on success, zero on failure.
+ *
+ * @see gdImageConvolution
+ */
+
+/**
+ * @brief Smooth an image
  *
  * Smooth an image
  *
  * (see smooth.jpg)
+ * 
+ * @param src        The source image.
+ * @param weight     The strength of the smoothing.
  *
- * Parameters:
- *   im     - The image.
- *   weight - The strength of the smoothing.
+ * @return Non-zero on success, zero on failure. Failure: Returns zero if im is NULL or weight is invalid.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
- *
- * See also:
- *   - <gdImageConvolution>
+ * @see gdImageConvolution @ref gdImageGaussianBlur gdImageEmboss gdImageMeanRemoval
  */
-BGD_DECLARE(int) gdImageSmooth(gdImagePtr im, float weight);
+ BGD_DECLARE(int) gdImageSmooth(gdImagePtr im, float weight);
 
 /**
- * Function: gdImageMeanRemoval
- *
- * Mean removal of an image
+ * @brief Mean removal of an image
  *
  * (see mean_removal.jpg)
  *
- * Parameters:
- *   im - The image.
+ * @param im The image.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
+ * @return Non-zero on success, zero on failure.
  *
- * See also:
- *   - <gdImageEdgeDetectQuick>
- *   - <gdImageConvolution>
+ * @see gdImageEdgeDetectQuick gdImageConvolution
  */
-BGD_DECLARE(int) gdImageMeanRemoval(gdImagePtr im);
+ BGD_DECLARE(int) gdImageMeanRemoval(gdImagePtr im);
 
 /**
- * Function: gdImageEmboss
- *
- * Emboss an image
+ * @brief Emboss an image
  *
  * (see emboss.jpg)
  *
- * Parameters:
- *   im - The image.
+ * @param im The image.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
+ * @return Non-zero on success, zero on failure.
  *
- * See also:
- *   - <gdImageConvolution>
+ * @see gdImageConvolution
  */
 BGD_DECLARE(int) gdImageEmboss(gdImagePtr im);
 
-/*
-  Function: gdImageGaussianBlur
-
-        <gdImageGaussianBlur> performs a Gaussian blur of radius 1 on the
-        image.  The image is modified in place.
-
-        *NOTE:* You will almost certain want to use
-        <gdImageCopyGaussianBlurred> instead, as it allows you to change
-        your kernel size and sigma value.  Future versions of this
-        function may fall back to calling it instead of
-        <gdImageConvolution>, causing subtle changes so be warned.
-
-  Parameters:
-        im  - The image to blur
-
-  Returns:
-        GD_TRUE (1) on success, GD_FALSE (0) on failure.
-
+/**
+ * @brief Gaussian blur of an image
+* Performs a Gaussian blur of radius 1 on the
+* image.  The image is modified in place.
+*
+* *NOTE:* You will almost certain want to use
+* @ref gdImageCopyGaussianBlurred instead, as it allows you to change
+* your kernel size and sigma value.  Future versions of this
+* function may fall back to calling it instead of
+* @ref gdImageConvolution, causing subtle changes so be warned.
+*
+* @param im The image to blur.
+*
+* @returns GD_TRUE (1) on success, GD_FALSE (0) on failure.
+*
+* @see @gdImageConvolution for more information on how to use convolution matrices to achieve different effects.
 */
 BGD_DECLARE(int) gdImageGaussianBlur(gdImagePtr im);
 
 /**
- * Function: gdImageEdgeDetectQuick
- *
- * Edge detection of an image
+ * @brief Edge detection of an image
  *
  * (see edge_detect_quick.jpg)
  *
- * Parameters:
- *   src - The image.
+ * @param src The image.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
+ * @return Non-zero on success, zero on failure.
  *
- * See also:
- *   - <gdImageMeanRemoval>
- *   - <gdImageConvolution>
+ * @see gdImageMeanRemoval gdImageConvolution
  */
 BGD_DECLARE(int) gdImageEdgeDetectQuick(gdImagePtr src);
 
-/*
-        Function: gdImageSelectiveBlur
+/**
+ * @brief Selective blur of an image
+ * 
+ * @param src The image.
+ *
+ * @return Non-zero on success, zero on failure.
  */
 BGD_DECLARE(int) gdImageSelectiveBlur(gdImagePtr src);
 
 /**
- * Function: gdImageConvolution
+ * @brief Apply a convolution matrix to an image.
  *
- * Apply a convolution matrix to an image
+ * Depending on the matrix, a wide range of effects can be accomplished, e.g.
+ * blurring, sharpening, embossing, and edge detection.
  *
- * Depending on the matrix a wide range of effects can be accomplished, e.g.
- * blurring, sharpening, embossing and edge detection.
+ * @param src        The image.
+ * @param filter     The 3x3 convolution matrix.
+ * @param filter_div The value to divide the convoluted channel values by.
+ * @param offset     The value to add to the convoluted channel values.
  *
- * Parameters:
- *   src        - The image.
- *   filter     - The 3x3 convolution matrix.
- *   filter_div - The value to divide the convoluted channel values by.
- *   offset     - The value to add to the convoluted channel values.
+ * @return Non-zero on success, zero on failure.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
- *
- * See also:
- *   - <gdImageEdgeDetectQuick>
- *   - <gdImageGaussianBlur>
- *   - <gdImageEmboss>
- *   - <gdImageMeanRemoval>
- *   - <gdImageSmooth>
+ * @see gdImageEdgeDetectQuick
+ * @see gdImageGaussianBlur
+ * @see gdImageEmboss
+ * @see gdImageMeanRemoval
+ * @see gdImageSmooth
  */
 BGD_DECLARE(int)
 gdImageConvolution(gdImagePtr src, float filter[3][3], float filter_div, float offset);
 
 /**
- * Function: gdImageColor
+ * @brief Change channel values of an image
  *
- * Change channel values of an image
+ * @param src   The image.
+ * @param red   The value to add to the red channel of all pixels.
+ * @param green The value to add to the green channel of all pixels.
+ * @param blue  The value to add to the blue channel of all pixels.
+ * @param alpha The value to add to the alpha channel of all pixels.
  *
- * Parameters:
- *   src   - The image.
- *   red   - The value to add to the red channel of all pixels.
- *   green - The value to add to the green channel of all pixels.
- *   blue  - The value to add to the blue channel of all pixels.
- *   alpha - The value to add to the alpha channel of all pixels.
+ * @return Non-zero on success, zero on failure.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
- *
- * See also:
- *   - <gdImageBrightness>
+ * @see gdImageBrightness
  */
 BGD_DECLARE(int)
 gdImageColor(gdImagePtr src, const int red, const int green, const int blue, const int alpha);
 
 /**
- * Function: gdImageContrast
+ * @brief Change the contrast of an image
  *
- * Change the contrast of an image
+ * @param src      The image.
+ * @param contrast The contrast adjustment value. Negative values increase, postive
+ *                 values decrease the contrast. The larger the absolute value, the
+ *                 stronger the effect.
  *
- * Parameters:
- *   src      - The image.
- *   contrast - The contrast adjustment value. Negative values increase, postive
- *              values decrease the contrast. The larger the absolute value, the
- *              stronger the effect.
+ * @return Non-zero on success, zero on failure.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
- *
- * See also:
- *   - <gdImageBrightness>
+ * @see gdImageBrightness
  */
 BGD_DECLARE(int) gdImageContrast(gdImagePtr src, double contrast);
 
 /**
- * Function: gdImageBrightness
+ * @brief Change the brightness of an image
  *
- * Change the brightness of an image
+ * @param src        The image.
+ * @param brightness The value to add to the color channels of all pixels.
  *
- * Parameters:
- *   src        - The image.
- *   brightness - The value to add to the color channels of all pixels.
+ * @return Non-zero on success, zero on failure.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
- *
- * See also:
- *   - <gdImageContrast>
- *   - <gdImageColor>
+ * @see gdImageContrast gdImageColor
  */
 BGD_DECLARE(int) gdImageBrightness(gdImagePtr src, int brightness);
 
 
 /**
- * Function: gdImageGrayScale
- *
- * Convert an image to grayscale
+ * @brief Convert an image to grayscale
  *
  * The red, green and blue components of each pixel are replaced by their
  * weighted sum using the same coefficients as the REC.601 luma (Y')
@@ -2317,94 +3093,83 @@ BGD_DECLARE(int) gdImageBrightness(gdImagePtr src, int brightness);
  *
  * For palette images the result may differ due to palette limitations.
  *
- * Parameters:
- *   src - The image.
+ * @param src The image.
  *
- * Returns:
- *   Non-zero on success, zero on failure.
+ * @return Non-zero on success, zero on failure.
  */
 BGD_DECLARE(int) gdImageGrayScale(gdImagePtr src);
 
 /**
- * Function: gdImageNegate
+ * @brief Invert an image
  *
- * Invert an image
+ * @param src The image.
  *
- * Parameters:
- *   src - The image.
- *
- * Returns:
- *   Non-zero on success, zero on failure.
+ * @return Non-zero on success, zero on failure.
  */
 BGD_DECLARE(int) gdImageNegate(gdImagePtr src);
 
-/*
-  Function: gdImageCopyGaussianBlurred
-
-        Return a copy of the source image _src_ blurred according to the
-        parameters using the Gaussian Blur algorithm.
-
-        _radius_ is a radius, not a diameter so a radius of 2 (for
-        example) will blur across a region 5 pixels across (2 to the
-        center, 1 for the center itself and another 2 to the other edge).
-
-        _sigma_ represents the "fatness" of the curve (lower == fatter).
-        If _sigma_ is less than or equal to 0,
-        <gdImageCopyGaussianBlurred> ignores it and instead computes an
-        "optimal" value.  Be warned that future versions of this function
-        may compute sigma differently.
-
-        The resulting image is always truecolor.
-
-  More Details:
-
-        A Gaussian Blur is generated by replacing each pixel's color
-        values with the average of the surrounding pixels' colors.  This
-        region is a circle whose radius is given by argument _radius_.
-        Thus, a larger radius will yield a blurrier image.
-
-        This average is not a simple mean of the values.  Instead, values
-        are weighted using the Gaussian function (roughly a bell curve
-        centered around the destination pixel) giving it much more
-        influence on the result than its neighbours.  Thus, a fatter curve
-        will give the center pixel more weight and make the image less
-        blurry; lower _sigma_ values will yield flatter curves.
-
-        Currently, <gdImageCopyGaussianBlurred> computes the default sigma
-        as
-
-                (2/3)*radius
-
-        Note, however that we reserve the right to change this if we find
-        a better ratio.  If you absolutely need the current sigma value,
-        you should set it yourself.
-
-  Parameters:
-
-        src     - the source image
-        radius  - the blur radius (*not* diameter--range is 2*radius + 1)
-        sigma   - the sigma value or a value <= 0.0 to use the computed default
-
-  Returns:
-
-        The new image or NULL if an error occurred.  The result is always
-        truecolor.
-
-  Example:
-        (start code)
-
-        FILE *in;
-        gdImagePtr result, src;
-
-        in = fopen("foo.png", "rb");
-        src = gdImageCreateFromPng(in);
-
-        result = gdImageCopyGaussianBlurred(im, src->sx / 10, -1.0);
-
-        (end code)
-*/
+/**
+ * @brief Return a copy of the source image _src_ blurred according to the parameters using the Gaussian Blur algorithm.
+ * Return a copy of the source image _src_ blurred according to the
+ * parameters using the Gaussian Blur algorithm.
+ * 
+ * _radius_ is a radius, not a diameter so a radius of 2 (for
+ * example) will blur across a region 5 pixels across (2 to the
+ * center, 1 for the center itself and another 2 to the other edge).
+ * 
+ * _sigma_ represents the "fatness of the curve (lower == fatter).
+ * If _sigma_ is less than or equal to 0,
+ * <gdImageCopyGaussianBlurred> ignores it and instead computes an
+ * "optimal" value.  Be warned that future versions of this function
+ * may compute sigma differently.
+ * 
+ * The resulting image is always truecolor.
+ * 
+ * More Details:
+ * 
+ * A Gaussian Blur is generated by replacing each pixel's color
+ * values with the average of the surrounding pixels' colors.  This
+ * region is a circle whose radius is given by argument _radius_.
+ * Thus, a larger radius will yield a blurrier image.
+ * 
+ * This average is not a simple mean of the values.  Instead, values
+ * are weighted using the Gaussian function (roughly a bell curve
+ * centered around the destination pixel) giving it much more
+ * influence on the result than its neighbours.  Thus, a fatter curve
+ * will give the center pixel more weight and make the image less
+ * blurry; lower _sigma_ values will yield flatter curves.
+ * 
+ * Currently, <gdImageCopyGaussianBlurred> computes the default sigma
+ * as
+ * 
+ * (2/3)*radius
+ * 
+ * Note, however that we reserve the right to change this if we find
+ * a better ratio.  If you absolutely need the current sigma value,
+ * you should set it yourself.
+ *
+ * @param  src  the source image
+ * @param  radius  the blur radius (*not* diameter--range is 2*radius + 1)
+ * @param  sigma   the sigma value or a value <= 0.0 to use the computed default
+ *
+ * @return The new image or NULL if an error occurred.  The result is always truecolor.
+ *
+ * Example:
+ * @code
+ * 
+ * FILE *in;
+ * gdImagePtr result, src;
+ * 
+ * in = fopen("foo.png", "rb");
+ * src = gdImageCreateFromPng(in);
+ * 
+ * result = gdImageCopyGaussianBlurred(im, src->sx / 10, -1.0);
+ * 
+ * @endcode
+ */
 BGD_DECLARE(gdImagePtr)
 gdImageCopyGaussianBlurred(gdImagePtr src, int radius, double sigma);
+/** @} */
 
 /**
  * Group: Accessor Macros
@@ -2625,7 +3390,31 @@ BGD_DECLARE(void *) gdDPExtractData(gdIOCtxPtr ctx, int *size);
 #define GD2_FMT_RAW 1
 #define GD2_FMT_COMPRESSED 2
 
-/* Image comparison definitions */
+
+/**
+ * @defgroup imagecomparison Image Comparison
+ * @{ */
+#define GD_CMP_IMAGE 1 /**< Actual image IS different */
+#define GD_CMP_NUM_COLORS 2 /**< Number of colors in pallette differ */
+#define GD_CMP_COLOR 4 /**< Image colors differ */
+#define GD_CMP_SIZE_X 8 /**< Image width differs */
+#define GD_CMP_SIZE_Y 16 /**< Image heights differ */
+#define GD_CMP_TRANSPARENT 32 /**< Transparent color differs */
+#define GD_CMP_BACKGROUND 64 /**< Background color differs */
+#define GD_CMP_INTERLACE 128 /**< Interlaced setting differs */
+#define GD_CMP_TRUECOLOR 256 /**< Truecolor vs palette differs */
+
+/**
+ * @brief Compare two images
+ *
+ * compare two images and some of its attributes. The images must be of the same size, otherwise the function will return -1.
+ * For accurate image content comparison, use @ref gdImagePerceptualDiff instead.
+ * 
+ * @param im1 An image.
+ * @param im2 Another image.
+ *
+ * @return A bitmask of @ref <Image Comparison> flags where each set flag signals which attributes of the images are different.
+ */
 BGD_DECLARE(int) gdImageCompare(gdImagePtr im1, gdImagePtr im2);
 
 typedef enum {
@@ -2661,122 +3450,157 @@ gdImagePerceptualDiff(gdImagePtr image1, gdImagePtr image2, double threshold,
                       const gdImagePerceptualDiffOptions *options,
                       gdImagePtr *diff_image,
                       gdImagePerceptualDiffResult *result);
+/** @} */
 
+
+/**
+ * @defgroup TransformScaleRotate Transform, scale and rotate
+ *
+ * Image transformation APIs for interpolation, scaling, rotation and affine
+ * mapping.
+ *
+ * Affine matrices use a six-element double array:
+ *
+ * matrix[0] == xx
+ * matrix[1] == yx
+ * matrix[2] == xy
+ * matrix[3] == yy
+ * matrix[4] == x0
+ * matrix[5] == y0
+ *
+ * A point (x, y) is transformed as:
+ *
+ * x_new = xx * x + xy * y + x0
+ * y_new = yx * x + yy * y + y0
+ *
+ * @{
+ */
+
+/**
+ * @brief Flip an image vertically
+ *
+ * The image is mirrored upside-down.
+ *
+ * @param im The image.
+ *
+ * @see gdImageFlipHorizontal, gdImageFlipBoth
+ */
 BGD_DECLARE(void) gdImageFlipHorizontal(gdImagePtr im);
+
+/**
+ * @brief Flip an image horizontally
+ *
+ * The image is mirrored left-right.
+ *
+ * @param im The image.
+ * @see gdImageFlipVertical, gdImageFlipBoth
+ */
 BGD_DECLARE(void) gdImageFlipVertical(gdImagePtr im);
+
+/**
+ * @brief Flip an image vertically and horizontally
+ *
+ * The image is mirrored upside-down and left-right.
+ *
+ * @param im The image.
+ * @see gdImageFlipVertical, gdImageFlipHorizontal
+ */
 BGD_DECLARE(void) gdImageFlipBoth(gdImagePtr im);
 
 /**
  * Group: Crop
  *
- * Constants: gdCropMode
- *  GD_CROP_DEFAULT     - Same as GD_CROP_TRANSPARENT
- *  GD_CROP_TRANSPARENT - Crop using the transparent color
- *  GD_CROP_BLACK       - Crop black borders
- *  GD_CROP_WHITE       - Crop white borders
- *  GD_CROP_SIDES       - Crop using colors of the 4 corners
- *
- * See also:
- *   - <gdImageCropAuto>
+ * @see gdImageCropAuto gdImageCropThreshold gdCrop
  **/
 enum gdCropMode {
-    GD_CROP_DEFAULT = 0,
-    GD_CROP_TRANSPARENT,
-    GD_CROP_BLACK,
-    GD_CROP_WHITE,
-    GD_CROP_SIDES,
-    GD_CROP_THRESHOLD
+    GD_CROP_DEFAULT = 0, /*< Same as GD_CROP_TRANSPARENT */
+    GD_CROP_TRANSPARENT, /*< Crop using the transparent color */
+    GD_CROP_BLACK, /*< Crop black borders */
+    GD_CROP_WHITE, /*< Crop white borders */
+    GD_CROP_SIDES, /*< Crop using colors of the 4 corners */
+    GD_CROP_THRESHOLD /*< Crop using a threshold */
 };
 
 /**
- * Function: gdImageCrop
+ * @brief Crop an image to a given rectangle
  *
- * Crop an image to a given rectangle
+ * @param src The image.
+ * @param crop The cropping rectangle, @ref gdRect.
  *
- * Parameters:
- *   src  - The image.
- *   crop - The cropping rectangle, see <gdRect>.
+ * @returns The newly created cropped image, or NULL on failure.
  *
- * Returns:
- *   The newly created cropped image, or NULL on failure.
- *
- * See also:
- *   - <gdImageCropAuto>
- *   - <gdImageCropThreshold>
+  * @see gdImageCrop gdImageCropThreshold gdImageAutoCropWithOptions
  */
 BGD_DECLARE(gdImagePtr) gdImageCrop(gdImagePtr src, const gdRect *crop);
 
 
 /**
- * Function: gdImageCropAuto
- *
- * Crop an image automatically
+ * @brief Crop an image automatically
  *
  * This function detects the cropping area according to the given _mode_.
  *
- * Parameters:
- *   im   - The image.
- *   mode - The cropping mode, see <gdCropMode>.
+ * @param im The image.
+ * @param mode The cropping mode, @ref gdCropMode.
  *
- * Returns:
- *   The newly created cropped image, or NULL on failure.
+ * @returns The newly created cropped image, or NULL on failure.
  *
- * See also:
- *   - <gdImageCrop>
- *   - <gdImageCropThreshold>
+ * @see gdImageCrop gdImageCropThreshold gdImageAutoCropWithOptions
  */
 BGD_DECLARE(gdImagePtr) gdImageCropAuto(gdImagePtr im, const unsigned int mode);
 
 
 /**
- * Function: gdImageCropThreshold
- *
- * Crop an image using a given color
+ * @brief Crop an image using a given color
  *
  * The _threshold_ defines the tolerance to be used while comparing the image
  * color and the color to crop. The method used to calculate the color
  * difference is based on the color distance in the RGB(A) cube.
  *
- * Parameters:
- *   im        - The image.
- *   color     - The crop color.
- *   threshold - The crop threshold.
+ * @param im The image.
+ * @param color The crop color.
+ * @param threshold The crop threshold.
  *
- * Returns:
- *   The newly created cropped image, or NULL on failure.
+ * @returns The newly created cropped image, or NULL on failure.
  *
- * See also:
- *   - <gdImageCrop>
- *   - <gdImageCropAuto>
+ * @see gdImageCrop gdImageCropThreshold gdImageAutoCropWithOptions
  */
 BGD_DECLARE(gdImagePtr)
 gdImageCropThreshold(gdImagePtr im, const unsigned int color, const float threshold);
 
+/**
+ * @brief Options for automatic cropping
+ * 
+ * This structure defines the options for automatic cropping.
+ */
 typedef struct {
-    enum gdCropMode mode;
-    float threshold;
-    int color;
+    enum gdCropMode mode; /**< The cropping mode, @see gdCropMode. */
+    float threshold; /**< The crop threshold. */
+    int color; /**< The crop color. */
 } gdAutoCropOptions;
 
+/**
+ * @brief Crop an image automatically with options
+ * 
+ * This function detects the cropping area according to the given options.
+ * 
+ * @param src The image.
+ * @param options The cropping options, @ref gdAutoCropOptions.
+ * 
+ * @returns The newly created cropped image, or NULL on failure.
+ */
 BGD_DECLARE(gdImagePtr)
 gdImageAutoCropWithOptions(gdImagePtr src, const gdAutoCropOptions *options);
 
 /**
- * Group: Image Transform and Scaling
- * {
- */
-/**
- * Function: gdImageSetInterpolationMethod
- *
- * Set the interpolation method stored on an image.
+ * @brief Set the interpolation method stored on an image.
  *
  * Scaling, rotation and affine transformation functions use this value when
  * they sample pixels from the image. Newly-created images default to
- * <GD_BILINEAR_FIXED>. Passing <GD_DEFAULT> is accepted and stores
- * <GD_LINEAR>.
+ * @ref GD_BILINEAR_FIXED. Passing @ref GD_DEFAULT is accepted and stores
+ * @ref GD_LINEAR.
  *
  * Some transform APIs have optimized paths for specific methods. In
- * particular, <gdImageScale> uses <GD_TRIANGLE> when downscaling or doing a
+ * particular, @ref gdImageScale uses @ref GD_TRIANGLE when downscaling or doing a
  * mixed-axis scale with the fixed compatibility methods.
  *
  * Parameters:
@@ -2787,16 +3611,14 @@ gdImageAutoCropWithOptions(gdImagePtr src, const gdAutoCropOptions *options);
  *   Non-zero on success, zero on failure.
  *
  * See also:
- *   - <gdInterpolationMethod>
- *   - <gdImageGetInterpolationMethod>
+ *   - @see gdInterpolationMethod
+ *   - @see gdImageGetInterpolationMethod
  */
 BGD_DECLARE(int)
 gdImageSetInterpolationMethod(gdImagePtr im, gdInterpolationMethod id);
 
 /**
- * Function: gdImageGetInterpolationMethod
- *
- * Return the interpolation method currently stored on an image.
+ * @brief Return the interpolation method currently stored on an image.
  *
  * Parameters:
  *   im - The image.
@@ -2805,26 +3627,24 @@ gdImageSetInterpolationMethod(gdImagePtr im, gdInterpolationMethod id);
  *   The current interpolation method.
  *
  * See also:
- *   - <gdInterpolationMethod>
- *   - <gdImageSetInterpolationMethod>
+ *   - @see gdInterpolationMethod
+ *   - @see gdImageSetInterpolationMethod
  */
 BGD_DECLARE(gdInterpolationMethod) gdImageGetInterpolationMethod(gdImagePtr im);
 
 /**
- * Function: gdImageScale
- *
- * Scale an image to an exact width and height using the source image's current
- * <gdInterpolationMethod>.
+ * @brief Scale an image to an exact width and height using the source image's current
+ * @ref gdInterpolationMethod.
  *
  * The returned image is newly allocated and must be destroyed with
- * <gdImageDestroy>. If the requested dimensions match the source dimensions,
+ * @ref gdImageDestroy. If the requested dimensions match the source dimensions,
  * this function returns a clone of the source image. Width and height must be
  * greater than zero.
  *
  * Notes:
- *   <GD_WEIGHTED4> is not supported by this function. For downscales and
+ *   @ref GD_WEIGHTED4 is not supported by this function. For downscales and
  *   mixed-axis scales, the fixed compatibility methods are sampled with
- *   <GD_TRIANGLE> for better filtering.
+ *   @ref GD_TRIANGLE for better filtering.
  *
  * Parameters:
  *   src        - The source image.
@@ -2835,10 +3655,10 @@ BGD_DECLARE(gdInterpolationMethod) gdImageGetInterpolationMethod(gdImagePtr im);
  *   The scaled image on success, or NULL on failure.
  *
  * See also:
- *   - <gdImageSetInterpolationMethod>
- *   - <gdImageScaleWithOptions>
- *   - <gdImageCopyResampled>
- *   - <gdImageCopyResized>
+ *   - @see gdImageSetInterpolationMethod
+ *   - @see gdImageScaleWithOptions
+ *   - @see gdImageCopyResampled
+ *   - @see gdImageCopyResized
  */
 BGD_DECLARE(gdImagePtr)
 gdImageScale(const gdImagePtr src, const unsigned int new_width, const unsigned int new_height);
@@ -2846,103 +3666,84 @@ gdImageScale(const gdImagePtr src, const unsigned int new_width, const unsigned 
 /**
  * Constants: gdScaleFit
  *
- * Controls how <gdImageScaleWithOptions> maps the source aspect ratio into the
+ * Controls how @ref gdImageScaleWithOptions maps the source aspect ratio into the
  * requested output size.
  *
- *  GD_SCALE_FIT_COVER   - Preserve aspect ratio, fill the requested size and crop overflow.
- *  GD_SCALE_FIT_CONTAIN - Preserve aspect ratio, fit entirely inside the requested size and pad the rest.
- *  GD_SCALE_FIT_FILL    - Stretch to the requested size without preserving aspect ratio.
- *  GD_SCALE_FIT_INSIDE  - Preserve aspect ratio and return an image no larger than the requested size.
- *  GD_SCALE_FIT_OUTSIDE - Preserve aspect ratio and return an image no smaller than the requested size.
- *
- * Defaults:
- *   When <gdImageScaleWithOptions> receives NULL options, the fit defaults to
- *   <GD_SCALE_FIT_COVER>.
+  * Defaults:
+ *   When @ref gdImageScaleWithOptions receives NULL options, the fit defaults to
+ *   @ref GD_SCALE_FIT_COVER.
  */
 typedef enum {
-    GD_SCALE_FIT_COVER,
-    GD_SCALE_FIT_CONTAIN,
-    GD_SCALE_FIT_FILL,
-    GD_SCALE_FIT_INSIDE,
-    GD_SCALE_FIT_OUTSIDE
+    GD_SCALE_FIT_COVER,   /**< Preserve aspect ratio, fill requested size, crop overflow. */
+    GD_SCALE_FIT_CONTAIN, /**< Preserve aspect ratio, fit inside requested size, pad the rest. */
+    GD_SCALE_FIT_FILL,    /**< Stretch to requested size without preserving aspect ratio. */
+    GD_SCALE_FIT_INSIDE,  /**< Preserve aspect ratio; output is no larger than requested size. */
+    GD_SCALE_FIT_OUTSIDE  /**< Preserve aspect ratio; output is no smaller than requested size. */
 } gdScaleFit;
 
 /**
- * Constants: gdScaleGravity
- *
- * Chooses the anchor used when <gdImageScaleWithOptions> pads or crops an
+ * Chooses the anchor used when @ref gdImageScaleWithOptions pads or crops an
  * image. North and south refer to the top and bottom of the output; west and
  * east refer to the left and right.
  *
- *  GD_SCALE_GRAVITY_NORTHWEST - Anchor to the top-left corner.
- *  GD_SCALE_GRAVITY_NORTH     - Anchor to the top edge.
- *  GD_SCALE_GRAVITY_NORTHEAST - Anchor to the top-right corner.
- *  GD_SCALE_GRAVITY_WEST      - Anchor to the left edge.
- *  GD_SCALE_GRAVITY_CENTER    - Anchor to the center.
- *  GD_SCALE_GRAVITY_EAST      - Anchor to the right edge.
- *  GD_SCALE_GRAVITY_SOUTHWEST - Anchor to the bottom-left corner.
- *  GD_SCALE_GRAVITY_SOUTH     - Anchor to the bottom edge.
- *  GD_SCALE_GRAVITY_SOUTHEAST - Anchor to the bottom-right corner.
- *
  * Defaults:
- *   When <gdImageScaleWithOptions> receives NULL options, gravity defaults to
- *   <GD_SCALE_GRAVITY_CENTER>.
+ *   When @ref gdImageScaleWithOptions receives NULL options, gravity defaults to
+ *   @ref GD_SCALE_GRAVITY_CENTER.
  */
 typedef enum {
-    GD_SCALE_GRAVITY_NORTHWEST,
-    GD_SCALE_GRAVITY_NORTH,
-    GD_SCALE_GRAVITY_NORTHEAST,
-    GD_SCALE_GRAVITY_WEST,
-    GD_SCALE_GRAVITY_CENTER,
-    GD_SCALE_GRAVITY_EAST,
-    GD_SCALE_GRAVITY_SOUTHWEST,
-    GD_SCALE_GRAVITY_SOUTH,
-    GD_SCALE_GRAVITY_SOUTHEAST
+
+    GD_SCALE_GRAVITY_NORTHWEST, /**< Anchor to the top-left corner. */
+    GD_SCALE_GRAVITY_NORTH,     /**< Anchor to the top edge. */
+    GD_SCALE_GRAVITY_NORTHEAST, /**< Anchor to the top-right corner. */
+    GD_SCALE_GRAVITY_WEST,      /**< Anchor to the left edge. */
+    GD_SCALE_GRAVITY_CENTER,    /**< Anchor to the center. */
+    GD_SCALE_GRAVITY_EAST,      /**< Anchor to the right edge. */
+    GD_SCALE_GRAVITY_SOUTHWEST, /**< Anchor to the bottom-left corner. */
+    GD_SCALE_GRAVITY_SOUTH,     /**< Anchor to the bottom edge. */
+    GD_SCALE_GRAVITY_SOUTHEAST  /**< Anchor to the bottom-right corner. */
 } gdScaleGravity;
 
 /**
  * Constants: gdScaleStrategy
  *
- * Optional crop strategy for <GD_SCALE_FIT_COVER> in
- * <gdImageScaleWithOptions>.
+ * Optional crop strategy for @ref GD_SCALE_FIT_COVER in
+ * @ref gdImageScaleWithOptions.
  *
- *  GD_SCALE_STRATEGY_NONE      - Crop using <gdScaleGravity> only.
- *  GD_SCALE_STRATEGY_ENTROPY   - Prefer a high-entropy crop region.
- *  GD_SCALE_STRATEGY_ATTENTION - Prefer a crop region with likely visual attention.
  *
  * Notes:
  *   Entropy and attention strategies are valid only with
- *   <GD_SCALE_FIT_COVER>. If a strategy cannot find an interesting crop,
- *   <gdImageScaleWithOptions> falls back to the normal gravity-based cover
+ *   @ref GD_SCALE_FIT_COVER. If a strategy cannot find an interesting crop,
+ *   @ref gdImageScaleWithOptions falls back to the normal gravity-based cover
  *   crop.
  *
  * Defaults:
- *   When <gdImageScaleWithOptions> receives NULL options, strategy defaults to
- *   <GD_SCALE_STRATEGY_NONE>.
+ *   When @ref gdImageScaleWithOptions receives NULL options, strategy defaults to
+ *   @ref GD_SCALE_STRATEGY_NONE.
  */
 typedef enum {
-    GD_SCALE_STRATEGY_NONE,
-    GD_SCALE_STRATEGY_ENTROPY,
-    GD_SCALE_STRATEGY_ATTENTION
+    GD_SCALE_STRATEGY_NONE,      /**< Crop using gravity only. */
+    GD_SCALE_STRATEGY_ENTROPY,   /**< Prefer a high-entropy crop region. */
+    GD_SCALE_STRATEGY_ATTENTION  /**< Prefer a likely visual-attention crop region. */
 } gdScaleStrategy;
 
 /**
  * Struct: gdScaleOptions
  *
- * Options for <gdImageScaleWithOptions>.
+ * Options for @ref gdImageScaleWithOptions.
  *
  * Members:
- *   fit              - Aspect-ratio behavior. See <gdScaleFit>.
- *   gravity          - Crop or padding anchor. See <gdScaleGravity>.
- *   strategy         - Optional cover-crop strategy. See <gdScaleStrategy>.
+ *   fit              - Aspect-ratio behavior. See @ref gdScaleFit.
+ *   gravity          - Crop or padding anchor. See @ref gdScaleGravity.
+ *   strategy         - Optional cover-crop strategy. See @ref gdScaleStrategy.
  *   background_color - Truecolor ARGB background used for padding and for transparent palette pixels.
- *   interpolation    - A <gdInterpolationMethod> value, or <GD_SCALE_INTERPOLATION_AUTO>.
+ *   interpolation    - A gdInterpolationMethod value (see @ref gdImageSetInterpolationMethod),
+ *                      or @ref GD_SCALE_INTERPOLATION_AUTO.
  *
  * Defaults:
- *   If the options pointer passed to <gdImageScaleWithOptions> is NULL, gd uses
- *   <GD_SCALE_FIT_COVER>, <GD_SCALE_GRAVITY_CENTER>,
- *   <GD_SCALE_STRATEGY_NONE>, background color 0x7f000000 and
- *   <GD_SCALE_INTERPOLATION_AUTO>.
+ *   If the options pointer passed to @ref gdImageScaleWithOptions is NULL, gd uses
+ *   @ref GD_SCALE_FIT_COVER, @ref GD_SCALE_GRAVITY_CENTER,
+ *   @ref GD_SCALE_STRATEGY_NONE, background color 0x7f000000 and
+ *   @ref GD_SCALE_INTERPOLATION_AUTO.
  *
  * Notes:
  *   For palette sources, gd prepares a truecolor working copy. Transparent
@@ -2951,99 +3752,60 @@ typedef enum {
  *   to truecolor.
  */
 typedef struct {
-    gdScaleFit fit;
-    gdScaleGravity gravity;
-    gdScaleStrategy strategy;
-    int background_color;
-    int interpolation;
+    gdScaleFit fit;            /**< Aspect-ratio behavior. */
+    gdScaleGravity gravity;    /**< Crop or padding anchor. */
+    gdScaleStrategy strategy;  /**< Optional cover-crop strategy. */
+    int background_color;      /**< Truecolor ARGB background used for padding and palette transparency. */
+    int interpolation;         /**< Interpolation method, or @ref GD_SCALE_INTERPOLATION_AUTO. */
 } gdScaleOptions;
 
 /**
- * Constant: GD_SCALE_INTERPOLATION_AUTO
- *
- * Let <gdImageScaleWithOptions> choose the interpolation method from the scale
- * direction.
- *
- * Automatic selection uses <GD_LANCZOS3> for downscales or mixed-axis scales,
- * and <GD_CATMULLROM> for pure upscales.
- */
-#define GD_SCALE_INTERPOLATION_AUTO -1
-
-/**
- * Function: gdImageScaleWithOptions
+ * @brief Scale an image using aspect-ratio, gravity, crop-strategy and interpolation options.
  *
  * Scale an image using aspect-ratio, gravity, crop-strategy and interpolation
  * options.
  *
  * This is the higher-level scaling API. It can stretch, contain, cover, pad or
  * return an inside/outside size while preserving the source aspect ratio. The
- * returned image is newly allocated and must be destroyed with
- * <gdImageDestroy>.
+ * returned image is newly allocated and must be destroyed with  @ref gdImageDestroy.
+ * 
+ * @param src        - The source image.
+ * @param new_width  - The requested width.
+ * @param new_height - The requested height.
+ * @param options    - Scaling options, or NULL for the default options.
  *
- * Parameters:
- *   src        - The source image.
- *   new_width  - The requested width.
- *   new_height - The requested height.
- *   options    - Scaling options, or NULL for the default options.
+ * @returns The scaled image on success, or NULL on failure. Caller owns the returned image and must call @ref gdImageDestroy when done.
+ *          Returns NULL if src is NULL, either dimension is zero, interpolation is
+ *          invalid, or an entropy/attention strategy is used with a fit other than @ref GD_SCALE_FIT_COVER.
  *
- * Returns:
- *   The scaled image on success, or NULL on failure.
- *
- * Failure:
- *   Returns NULL if src is NULL, either dimension is zero, interpolation is
- *   invalid, or an entropy/attention strategy is used with a fit other than
- *   <GD_SCALE_FIT_COVER>.
- *
- * See also:
- *   - <gdScaleOptions>
- *   - <gdImageScale>
- *   - <gdImageInterestingCropRegion>
+ * @see gdScaleOptions gdImageScale gdImageInterestingCropRegion
  */
 BGD_DECLARE(gdImagePtr)
 gdImageScaleWithOptions(const gdImagePtr src, const unsigned int new_width,
                         const unsigned int new_height, const gdScaleOptions *options);
 
 /**
- * Group: Image Transform and Scaling
- *
- * Constants: gdInterestingMethod
- *
- * Methods used to find an interesting crop region.
- *
- *  GD_INTERESTING_ENTROPY   - Prefer regions with higher image entropy.
- *  GD_INTERESTING_ATTENTION - Prefer regions with likely visual attention.
- *
- * See also:
- *   - <gdImageInterestingCropRegion>
- *   - <gdImageScaleWithOptions>
+ * @brief  Methods used to find an interesting crop region.
+ *  @see gdImageInterestingCropRegion gdImageScaleWithOptions
  */
 typedef enum {
-	GD_INTERESTING_ENTROPY,
-	GD_INTERESTING_ATTENTION
+    GD_INTERESTING_ENTROPY,    /**< Prefer regions with higher image entropy. */
+    GD_INTERESTING_ATTENTION   /**< Prefer regions with likely visual attention. */
 } gdInterestingMethod;
 
 /**
- * Group: Image Transform and Scaling
- *
- * Function: gdImageInterestingCropRegion
- *
- * Find a source crop region with the requested aspect ratio using an
+ * @brief Find a source crop region with the requested aspect ratio using an
  * interesting-region method.
  *
- * Parameters:
- *   src           - The source image.
- *   target_width  - The target width used to compute the crop aspect ratio.
- *   target_height - The target height used to compute the crop aspect ratio.
- *   method        - The interesting-region method.
- *   crop          - Receives the crop rectangle on success.
+ * @param src           - The source image.
+ * @param target_width  - The target width used to compute the crop aspect ratio.
+ * @param target_height - The target height used to compute the crop aspect ratio.
+ * @param method        - The interesting-region method.
+ * @param crop          - Receives the crop rectangle on success.
  *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  *
- * See also:
- *   - <gdInterestingMethod>
- *   - <gdImageEntropyCropRegion>
- *   - <gdImageScaleWithOptions>
+ * @see gdInterestingMethod gdImageEntropyCropRegion gdImageScaleWithOptions
  */
 BGD_DECLARE(int)
 gdImageInterestingCropRegion(const gdImagePtr src, unsigned int target_width,
@@ -3051,333 +3813,240 @@ gdImageInterestingCropRegion(const gdImagePtr src, unsigned int target_width,
                              gdRectPtr crop);
 
 /**
- * Group: Image Transform and Scaling
+ * @brief Find a high-entropy source crop region with the requested aspect ratio.
  *
- * Function: gdImageEntropyCropRegion
+ * @param src           - The source image.
+ * @param target_width  - The target width used to compute the crop aspect ratio.
+ * @param target_height - The target height used to compute the crop aspect ratio.
+ * @param crop          - Receives the crop rectangle on success.
  *
- * Find a high-entropy source crop region with the requested aspect ratio.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  *
- * Parameters:
- *   src           - The source image.
- *   target_width  - The target width used to compute the crop aspect ratio.
- *   target_height - The target height used to compute the crop aspect ratio.
- *   crop          - Receives the crop rectangle on success.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
- *
- * See also:
- *   - <gdImageInterestingCropRegion>
+ * @see gdImageInterestingCropRegion
  */
 BGD_DECLARE(int)
 gdImageEntropyCropRegion(const gdImagePtr src, unsigned int target_width,
                          unsigned int target_height, gdRectPtr crop);
 
 /**
- * Function: gdImageRotateInterpolated
- *
- * Rotate an image by an arbitrary angle using the source image's current
- * <gdInterpolationMethod>.
+ * @brief Rotate an image by an arbitrary angle using the source image's current @ref gdInterpolationMethod.
  *
  * The returned image is newly allocated and must be destroyed with
- * <gdImageDestroy>. Palette sources are converted to truecolor internally for
+ * @ref gdImageDestroy. Palette sources are converted to truecolor internally for
  * arbitrary-angle rotation. Angles that are multiples of 90 degrees use the
  * optimized rotate paths.
  *
- * Parameters:
- *   src     - The source image.
- *   angle   - Rotation angle in degrees.
- *   bgcolor - Background color for uncovered pixels. For palette sources, this may be a palette index.
+ * @param src     - The source image.
+ * @param angle   - Rotation angle in degrees.
+ * @param bgcolor - Background color for uncovered pixels. For palette sources, this may be a palette index.
  *
- * Returns:
- *   The rotated image on success, or NULL on failure.
+ * @returns The rotated image on success, or NULL on failure.
  *
- * Notes:
- *   bgcolor must be non-negative. The source interpolation method must be a
- *   valid concrete method; <GD_DEFAULT> is not accepted by this function.
+ * @note bgcolor must be non-negative. The source interpolation method must be a valid concrete method; @ref GD_DEFAULT is not accepted by this function.
  *
- * See also:
- *   - <gdImageSetInterpolationMethod>
- *   - <gdImageRotate90>
- *   - <gdImageRotate180>
- *   - <gdImageRotate270>
- */
+ * @see gdImageSetInterpolationMethod gdImageRotate90 gdImageRotate180 gdImageRotate270
+  */
 BGD_DECLARE(gdImagePtr)
 gdImageRotateInterpolated(const gdImagePtr src, const float angle, int bgcolor);
 
 /**
- * Constants: gdAffineStandardMatrix
- *
- * Standard affine matrix operations.
- *
- *  GD_AFFINE_TRANSLATE        - Translation matrix.
- *  GD_AFFINE_SCALE            - Scale matrix.
- *  GD_AFFINE_ROTATE           - Rotation matrix.
- *  GD_AFFINE_SHEAR_HORIZONTAL - Horizontal shear matrix.
- *  GD_AFFINE_SHEAR_VERTICAL   - Vertical shear matrix.
+ * @brief Standard affine matrix operations.
  */
 typedef enum {
-    GD_AFFINE_TRANSLATE = 0,
-    GD_AFFINE_SCALE,
-    GD_AFFINE_ROTATE,
-    GD_AFFINE_SHEAR_HORIZONTAL,
-    GD_AFFINE_SHEAR_VERTICAL
+    GD_AFFINE_TRANSLATE = 0,   /**< Translation matrix. */
+    GD_AFFINE_SCALE,           /**< Scale matrix. */
+    GD_AFFINE_ROTATE,          /**< Rotation matrix. */
+    GD_AFFINE_SHEAR_HORIZONTAL,/**< Horizontal shear matrix. */
+    GD_AFFINE_SHEAR_VERTICAL   /**< Vertical shear matrix. */
 } gdAffineStandardMatrix;
 
 /**
- * Function: gdAffineApplyToPointF
+ * @brief Apply an affine matrix to a floating-point point.
  *
- * Apply an affine matrix to a floating-point point.
+ * @param dst    - Receives the transformed point.
+ * @param src    - Source point.
+ * @param affine - Matrix in gd's six-value affine form.
  *
- * Parameters:
- *   dst    - Receives the transformed point.
- *   src    - Source point.
- *   affine - Matrix in gd's six-value affine form.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int)
 gdAffineApplyToPointF(gdPointFPtr dst, const gdPointFPtr src, const double affine[6]);
 
 /**
- * Function: gdAffineInvert
+ * @brief Invert an affine matrix.
  *
- * Invert an affine matrix.
+ * @param dst - Receives the inverse matrix.
+ * @param src - Source matrix.
  *
- * Parameters:
- *   dst - Receives the inverse matrix.
- *   src - Source matrix.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE if the matrix cannot be inverted.
+ * @returns GD_TRUE on success, or GD_FALSE if the matrix cannot be inverted.
  */
 BGD_DECLARE(int) gdAffineInvert(double dst[6], const double src[6]);
 
 /**
- * Function: gdAffineFlip
+ * @brief Build a horizontal and/or vertical flip from an affine matrix.
  *
- * Build a horizontal and/or vertical flip from an affine matrix.
+ * @param dst_affine - Receives the flipped matrix.
+ * @param src_affine - Source matrix.
+ * @param flip_h     - Non-zero to flip horizontally.
+ * @param flip_v     - Non-zero to flip vertically.
  *
- * Parameters:
- *   dst_affine - Receives the flipped matrix.
- *   src_affine - Source matrix.
- *   flip_h     - Non-zero to flip horizontally.
- *   flip_v     - Non-zero to flip vertically.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int)
 gdAffineFlip(double dst_affine[6], const double src_affine[6], const int flip_h, const int flip_v);
 
 /**
- * Function: gdAffineConcat
- *
- * Concatenate two affine matrices.
+ * @brief Concatenate two affine matrices.
  *
  * The result is equivalent to applying m1 and then m2. The destination may be
  * the same array as either input.
  *
- * Parameters:
- *   dst - Receives the concatenated matrix.
- *   m1  - First matrix.
- *   m2  - Second matrix.
+ * @param dst - Receives the concatenated matrix.
+ * @param m1  - First matrix.
+ * @param m2  - Second matrix.
  *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int)
 gdAffineConcat(double dst[6], const double m1[6], const double m2[6]);
 
 /**
- * Function: gdAffineIdentity
+ * @brief Store an identity affine matrix.
  *
- * Store an identity affine matrix.
- *
- * Parameters:
- *   dst - Receives the identity matrix.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @param dst - Receives the identity matrix.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int) gdAffineIdentity(double dst[6]);
 
 /**
- * Function: gdAffineScale
+ * @brief Store a scale affine matrix.
  *
- * Store a scale affine matrix.
+ * @param dst     - Receives the scale matrix.
+ * @param scale_x - Horizontal scale factor.
+ * @param scale_y - Vertical scale factor.
  *
- * Parameters:
- *   dst     - Receives the scale matrix.
- *   scale_x - Horizontal scale factor.
- *   scale_y - Vertical scale factor.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int)
 gdAffineScale(double dst[6], const double scale_x, const double scale_y);
 
 /**
- * Function: gdAffineRotate
- *
- * Store a rotation affine matrix.
+ * @brief Store a rotation affine matrix.
  *
  * In gd's image coordinate system, increasing y moves downward; positive
  * angles rotate counterclockwise in that system.
  *
- * Parameters:
- *   dst   - Receives the rotation matrix.
- *   angle - Rotation angle in degrees.
+ * @param dst   - Receives the rotation matrix.
+ * @param angle - Rotation angle in degrees.
  *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int) gdAffineRotate(double dst[6], const double angle);
 
 /**
- * Function: gdAffineShearHorizontal
+ * @brief Store a horizontal shear affine matrix.
  *
- * Store a horizontal shear affine matrix.
+ * @param dst   - Receives the shear matrix.
+ * @param angle - Shear angle in degrees.
  *
- * Parameters:
- *   dst   - Receives the shear matrix.
- *   angle - Shear angle in degrees.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int) gdAffineShearHorizontal(double dst[6], const double angle);
 
 /**
- * Function: gdAffineShearVertical
+ * @brief Store a vertical shear affine matrix.
  *
- * Store a vertical shear affine matrix.
+ * @param dst   - Receives the shear matrix.
+ * @param angle - Shear angle in degrees.
  *
- * Parameters:
- *   dst   - Receives the shear matrix.
- *   angle - Shear angle in degrees.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int) gdAffineShearVertical(double dst[6], const double angle);
 
 /**
- * Function: gdAffineTranslate
+ * @brief Store a translation affine matrix.
  *
- * Store a translation affine matrix.
+ * @param dst      - Receives the translation matrix.
+ * @param offset_x - Horizontal offset.
+ * @param offset_y - Vertical offset.
  *
- * Parameters:
- *   dst      - Receives the translation matrix.
- *   offset_x - Horizontal offset.
- *   offset_y - Vertical offset.
- *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int)
 gdAffineTranslate(double dst[6], const double offset_x, const double offset_y);
 
 /**
- * Function: gdAffineExpansion
- *
- * Return the linear expansion factor of an affine matrix.
+ * @brief Return the linear expansion factor of an affine matrix.
  *
  * This is the square root of the factor by which the matrix changes area.
  *
- * Parameters:
- *   src - Source matrix.
+ * @param src - Source matrix.
  *
- * Returns:
- *   The expansion factor.
+ * @returns The expansion factor.
  */
 BGD_DECLARE(double) gdAffineExpansion(const double src[6]);
 
 /**
- * Function: gdAffineRectilinear
+ * @brief Test whether an affine matrix preserves axis-aligned rectangles.
  *
- * Test whether an affine matrix preserves axis-aligned rectangles.
+ * @param src - Source matrix.
  *
- * Parameters:
- *   src - Source matrix.
- *
- * Returns:
- *   GD_TRUE if the matrix is rectilinear, otherwise GD_FALSE.
+ * @returns GD_TRUE if the matrix is rectilinear, otherwise GD_FALSE.
  */
 BGD_DECLARE(int) gdAffineRectilinear(const double src[6]);
 
 /**
- * Function: gdAffineEqual
+ * @brief Compare two affine matrices.
  *
- * Compare two affine matrices.
+ * @param matrix1 - First matrix.
+ * @param matrix2 - Second matrix.
  *
- * Parameters:
- *   matrix1 - First matrix.
- *   matrix2 - Second matrix.
- *
- * Returns:
- *   GD_TRUE if the matrices are equal within gd's affine tolerance, otherwise
- *   GD_FALSE.
+ * @returns GD_TRUE if the matrices are equal within gd's affine tolerance, otherwise
+ *          GD_FALSE.
  */
 BGD_DECLARE(int)
 gdAffineEqual(const double matrix1[6], const double matrix2[6]);
 
 /**
- * Function: gdTransformAffineGetImage
- *
- * Apply an affine transform to a source region and create an image containing
+ * @brief Apply an affine transform to a source region and create an image containing
  * the complete transformed result.
  *
  * The new image is truecolor with alpha saving enabled. Areas not covered by
  * the transformed source are transparent. The source image's current
- * <gdInterpolationMethod> controls sampling. Palette sources may be converted
+ * @ref gdInterpolationMethod controls sampling. Palette sources may be converted
  * to truecolor internally.
  *
- * Parameters:
- *   dst      - Receives the newly-created destination image.
- *   src      - Source image.
- *   src_area - Source rectangle, or NULL to transform the full image.
- *   affine   - Matrix in gd's six-value affine form.
+ * @param dst      - Receives the newly-created destination image.
+ * @param src      - Source image.
+ * @param src_area - Source rectangle, or NULL to transform the full image.
+ * @param affine   - Matrix in gd's six-value affine form.
  *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure. On failure, *dst is NULL.
+ * @returns GD_TRUE on success, or GD_FALSE on failure. On failure, *dst is NULL.
  *
- * See also:
- *   - <gdTransformAffineCopy>
- *   - <gdTransformAffineBoundingBox>
- *   - <gdImageSetInterpolationMethod>
+ * @see gdTransformAffineCopy gdTransformAffineBoundingBox gdImageSetInterpolationMethod
  */
 BGD_DECLARE(int)
 gdTransformAffineGetImage(gdImagePtr *dst, const gdImagePtr src, gdRectPtr src_area,
                           const double affine[6]);
 
 /**
- * Function: gdTransformAffineCopy
- *
- * Apply an affine transform to a source region and copy the transformed pixels
+ * @brief Apply an affine transform to a source region and copy the transformed pixels
  * into an existing destination image.
  *
- * The source image's current <gdInterpolationMethod> controls sampling.
+ * The source image's current @ref gdInterpolationMethod controls sampling.
  * Transparent samples are skipped. Destination bounds and alpha-blending
  * settings are honored.
  *
- * Parameters:
- *   dst        - Destination image.
- *   dst_x      - Destination x offset.
- *   dst_y      - Destination y offset.
- *   src        - Source image.
- *   src_region - Source rectangle to transform.
- *   affine     - Matrix in gd's six-value affine form.
+ * @param dst        - Destination image.
+ * @param dst_x      - Destination x offset.
+ * @param dst_y      - Destination y offset.
+ * @param src        - Source image.
+ * @param src_region - Source rectangle to transform.
+ * @param affine     - Matrix in gd's six-value affine form.
  *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  *
- * See also:
- *   - <gdTransformAffineGetImage>
- *   - <gdTransformAffineBoundingBox>
- *   - <gdImageSetInterpolationMethod>
+ * @see gdTransformAffineGetImage  gdTransformAffineBoundingBox gdImageSetInterpolationMethod
  */
 BGD_DECLARE(int)
 gdTransformAffineCopy(gdImagePtr dst, int dst_x, int dst_y, const gdImagePtr src,
@@ -3388,52 +4057,19 @@ gdTransformAffineCopy(gdImagePtr dst, int x0, int y0, int x1, int y1,
                           const double affine[6]);
 */
 /**
- * Function: gdTransformAffineBoundingBox
- *
- * Compute the bounding box of a source rectangle after applying an affine
+ * @brief Compute the bounding box of a source rectangle after applying an affine
  * transform.
  *
- * Parameters:
- *   src    - Source rectangle.
- *   affine - Matrix in gd's six-value affine form.
- *   bbox   - Receives the transformed bounding box.
+ * @param src    - Source rectangle.
+ * @param affine - Matrix in gd's six-value affine form.
+ * @param bbox   - Receives the transformed bounding box.
  *
- * Returns:
- *   GD_TRUE on success, or GD_FALSE on failure.
+ * @returns GD_TRUE on success, or GD_FALSE on failure.
  */
 BGD_DECLARE(int)
 gdTransformAffineBoundingBox(gdRectPtr src, const double affine[6], gdRectPtr bbox);
 
-/**
- * }
- */
-
-/**
- * Group: Image Comparison
- *
- * Constants:
- *   GD_CMP_IMAGE       - Actual image IS different
- *   GD_CMP_NUM_COLORS  - Number of colors in pallette differ
- *   GD_CMP_COLOR       - Image colors differ
- *   GD_CMP_SIZE_X      - Image width differs
- *   GD_CMP_SIZE_Y      - Image heights differ
- *   GD_CMP_TRANSPARENT - Transparent color differs
- *   GD_CMP_BACKGROUND  - Background color differs
- *   GD_CMP_INTERLACE   - Interlaced setting differs
- *   GD_CMP_TRUECOLOR   - Truecolor vs palette differs
- *
- * See also:
- *   - <gdImageCompare>
- */
-#define GD_CMP_IMAGE 1
-#define GD_CMP_NUM_COLORS 2
-#define GD_CMP_COLOR 4
-#define GD_CMP_SIZE_X 8
-#define GD_CMP_SIZE_Y 16
-#define GD_CMP_TRANSPARENT 32
-#define GD_CMP_BACKGROUND 64
-#define GD_CMP_INTERLACE 128
-#define GD_CMP_TRUECOLOR 256
+/** @} */
 
 /* resolution affects ttf font rendering, particularly hinting */
 #define GD_RESOLUTION 96 /* pixels per inch */

@@ -157,11 +157,6 @@ static char *font_path(char **fontpath, char *name_list);
 #define TRUE !FALSE
 #endif
 
-/**
- * Function: gdImageStringTTF
- *
- * Alias of <gdImageStringFT>.
- */
 BGD_DECLARE(char *)
 gdImageStringTTF(gdImagePtr im, int *brect, int fg, const char *fontlist, double ptsize,
                  double angle, int x, int y, const char *string)
@@ -823,23 +818,8 @@ static char *gdft_draw_bitmap(gdCache_head_t *tc_cache, gdImagePtr im, int fg, F
     return (char *)NULL;
 }
 
-/**
- * Function: gdFreeFontCache
- *
- * Alias of <gdFontCacheShutdown>.
- */
 BGD_DECLARE(void) gdFreeFontCache() { gdFontCacheShutdown(); }
 
-/**
- * Function: gdFontCacheShutdown
- *
- * Shut down the font cache and free the allocated resources.
- *
- * Important:
- *  This function has to be called whenever FreeType operations have been
- *  invoked, to avoid resource leaks. It doesn't harm to call this function
- *  multiple times.
- */
 BGD_DECLARE(void) gdFontCacheShutdown()
 {
     if (fontCache) {
@@ -853,31 +833,6 @@ BGD_DECLARE(void) gdFontCacheShutdown()
     }
 }
 
-/**
- * Function: gdImageStringFT
- *
- * Render an UTF-8 string onto a gd image.
- *
- * Parameters:
- *	im       - The image to draw onto.
- *  brect    - The bounding rectangle as array of 8 integers where each pair
- *             represents the x- and y-coordinate of a point. The points
- *             specify the lower left, lower right, upper right and upper left
- *             corner.
- *	fg       - The font color.
- *	fontlist - The semicolon delimited list of font filenames to look for.
- *	ptsize   - The height of the font in typographical points (pt).
- *	angle    - The angle in radian to rotate the font counter-clockwise.
- *	x        - The x-coordinate of the basepoint (roughly the lower left corner)
- *of the first letter. y        - The y-coordinate of the basepoint (roughly the
- *lower left corner) of the first letter. string   - The string to render.
- *
- * Variant:
- *  - <gdImageStringFTEx>
- *
- * See also:
- *  - <gdImageString>
- */
 BGD_DECLARE(char *)
 gdImageStringFT(gdImagePtr im, int *brect, int fg, const char *fontlist, double ptsize,
                 double angle, int x, int y, const char *string)
@@ -885,15 +840,6 @@ gdImageStringFT(gdImagePtr im, int *brect, int fg, const char *fontlist, double 
     return gdImageStringFTEx(im, brect, fg, fontlist, ptsize, angle, x, y, string, 0);
 }
 
-/**
- * Function: gdFontCacheSetup
- *
- * Set up the font cache.
- *
- * This is called automatically from the string rendering functions, if it
- * has not already been called. So there's no need to call this function
- * explicitly.
- */
 BGD_DECLARE(int) gdFontCacheSetup(void)
 {
     if (fontCache) {
@@ -1851,19 +1797,6 @@ static char *font_path(char **fontpath, char *name_list)
 }
 #endif
 
-/**
- * Function: gdFTUseFontConfig
- *
- * Enable or disable fontconfig by default.
- *
- * If GD is built without libfontconfig support, this function is a NOP.
- *
- * Parameters:
- *  flag - Zero to disable, nonzero to enable.
- *
- * See also:
- *  - <gdImageStringFTEx>
- */
 BGD_DECLARE(int) gdFTUseFontConfig(int flag)
 {
 #ifdef HAVE_LIBFONTCONFIG

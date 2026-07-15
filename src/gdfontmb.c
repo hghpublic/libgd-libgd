@@ -3873,11 +3873,6 @@ gdFont gdFontMediumBoldRep = {256, 0, 7, 13, gdFontMediumBoldData};
 
 BGD_EXPORT_DATA_PROT gdFontPtr gdFontMediumBold = &gdFontMediumBoldRep;
 
-/**
- * Function: gdFontGetMediumBold
- *
- * Returns the built-in medium bold font.
- */
 BGD_DECLARE(gdFontPtr)
 gdFontGetMediumBold(void) { return gdFontMediumBold; }
 

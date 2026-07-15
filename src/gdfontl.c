@@ -4641,11 +4641,6 @@ gdFont gdFontLargeRep = {256, 0, 8, 16, gdFontLargeData};
 
 BGD_EXPORT_DATA_PROT gdFontPtr gdFontLarge = &gdFontLargeRep;
 
-/**
- * Function: gdFontGetLarge
- *
- * Returns the built-in large font.
- */
 BGD_DECLARE(gdFontPtr) gdFontGetLarge(void) { return gdFontLarge; }
 
 /* This file has not been truncated. */

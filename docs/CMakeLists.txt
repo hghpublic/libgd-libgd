@@ -1,54 +1,66 @@
-MESSAGE("Looking for naturaldocs....")
+message(STATUS "Configuring Doxygen documentation target")
 
-find_package(Perl 5.8 COMPONENTS Runtime)
-find_package(NaturalDocs 1.51)
+find_package(Doxygen)
 
-if(PERL_FOUND)
-  SET(NATURALDOCS_FLAGS
-  --rebuild --rebuild-output --documented-only
-  -i "${CMAKE_CURRENT_BINARY_DIR}/tmp/" 
-  -img "${CMAKE_CURRENT_SOURCE_DIR}/naturaldocs/images/"
-  -o html "${CMAKE_CURRENT_BINARY_DIR}/api"
-  --project "${CMAKE_CURRENT_SOURCE_DIR}/naturaldocs/project/"
-  -s Default libgd
-  )
-
-  file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/tmp")
-  file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/docs/api")
-  file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tmp")
-  file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/api")
-
-  configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/../COPYING  ${CMAKE_CURRENT_BINARY_DIR}/tmp/License.txt COPYONLY)
-  configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/../docs/INSTALL  ${CMAKE_CURRENT_BINARY_DIR}/tmp/INSTALL.txt COPYONLY)
-  configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/../docs/INSTALL.Solaris  ${CMAKE_CURRENT_BINARY_DIR}/tmp/INSTALL_SOLARIS.txt COPYONLY)
-  configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/../docs/README.CMAKE  ${CMAKE_CURRENT_BINARY_DIR}/tmp/INSTALL_CMAKE.txt COPYONLY)
-  configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/../docs/README.TESTING  ${CMAKE_CURRENT_BINARY_DIR}/tmp/TESTING.txt COPYONLY)
-  configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/../docs/README.TXT  ${CMAKE_CURRENT_BINARY_DIR}/tmp/README.txt COPYONLY)
-  configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/../docs/README.JPN  ${CMAKE_CURRENT_BINARY_DIR}/tmp/README_JPN.txt COPYONLY)
-
-  execute_process(
-    COMMAND sed -e s/@VERSION@/${GDLIB_VERSION}/g ${CMAKE_CURRENT_SOURCE_DIR}/naturaldocs/preamble.txt
-    OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/tmp/preamble.txt
-    RESULT_VARIABLE TEST_ERROR
-  )
-  
-  SET(PERL_ARGS ${CMAKE_CURRENT_SOURCE_DIR}/../src ${CMAKE_CURRENT_BINARY_DIR}/tmp)
-  MESSAGE("${PERL_EXECUTABLE}" ${CMAKE_CURRENT_SOURCE_DIR}/naturaldocs/nobgd.pl ${PERL_ARGS})
-  execute_process(COMMAND "${PERL_EXECUTABLE}" ${CMAKE_CURRENT_SOURCE_DIR}/naturaldocs/nobgd.pl ${PERL_ARGS}
-    RESULT_VARIABLE TEST_ERROR
-    )
-    MESSAGE(${TEST_ERROR})
-  if(NOT DEBUG_MODE)
-    list(APPEND NATURALDOCS_FLAGS --quiet)
+if(DOXYGEN_FOUND)
+  # Allow relocating the project Doxyfile into docs/ while keeping root fallback.
+  set(DOXYGEN_CONFIG_FILE "")
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile")
+    set(DOXYGEN_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile")
+  elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../Doxyfile")
+    set(DOXYGEN_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../Doxyfile")
   endif()
 
-  add_custom_target(docs
-    ${NATURALDOCS_EXECUTABLE} ${NATURALDOCS_FLAGS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating API documentation"
+  if(DOXYGEN_CONFIG_FILE STREQUAL "")
+    message(WARNING "Doxygen found, but no Doxyfile was found in docs/ or project root. Skipping docs target.")
+  else()
+    # Keep docs output build-dir relative (build/docs/api) instead of a fixed path.
+    set(DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/api")
+    set(DOXYGEN_CONFIG_FILE_OUT "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.cmake")
+    set(DOXYGEN_MAINPAGE_FILE "${CMAKE_CURRENT_BINARY_DIR}/preamble.md")
+
+    file(MAKE_DIRECTORY "${DOXYGEN_OUTPUT_DIR}")
+
+    # Generate versioned main page content from docs/preamble.md.
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/preamble.md" DOXYGEN_MAINPAGE_CONTENT)
+    string(REPLACE "@VERSION@" "${GDLIB_VERSION}" DOXYGEN_MAINPAGE_CONTENT "${DOXYGEN_MAINPAGE_CONTENT}")
+    # Convert the old NaturalDocs-style title into a Markdown heading for Doxygen.
+    string(REGEX REPLACE "^Title:[ \t]*" "# " DOXYGEN_MAINPAGE_CONTENT "${DOXYGEN_MAINPAGE_CONTENT}")
+    file(WRITE "${DOXYGEN_MAINPAGE_FILE}" "${DOXYGEN_MAINPAGE_CONTENT}")
+
+    file(READ "${DOXYGEN_CONFIG_FILE}" DOXYGEN_CONFIG_CONTENT)
+    string(REGEX REPLACE "OUTPUT_DIRECTORY[ \t]*=[^\n\r]*"
+                         "OUTPUT_DIRECTORY       = ${DOXYGEN_OUTPUT_DIR}"
+                         DOXYGEN_CONFIG_CONTENT
+                         "${DOXYGEN_CONFIG_CONTENT}")
+    string(REGEX REPLACE "PROJECT_NUMBER[ \t]*=[^\n\r]*"
+                         "PROJECT_NUMBER         = \"${GDLIB_VERSION}\""
+                         DOXYGEN_CONFIG_CONTENT
+                         "${DOXYGEN_CONFIG_CONTENT}")
+    string(REGEX REPLACE "USE_MDFILE_AS_MAINPAGE[ \t]*=[^\n\r]*"
+                         "USE_MDFILE_AS_MAINPAGE = ${DOXYGEN_MAINPAGE_FILE}"
+                         DOXYGEN_CONFIG_CONTENT
+                         "${DOXYGEN_CONFIG_CONTENT}")
+    string(REGEX REPLACE "INPUT[ \t]*=[^\n\r]*"
+                         "INPUT                  = src ${DOXYGEN_MAINPAGE_FILE}"
+                         DOXYGEN_CONFIG_CONTENT
+                         "${DOXYGEN_CONFIG_CONTENT}")
+    file(WRITE "${DOXYGEN_CONFIG_FILE_OUT}" "${DOXYGEN_CONFIG_CONTENT}")
+
+    add_custom_target(docs
+      COMMAND "${DOXYGEN_EXECUTABLE}" "${DOXYGEN_CONFIG_FILE_OUT}"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.."
+      COMMENT "Generating API documentation with Doxygen"
+      VERBATIM
     )
 
-  #file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/NaturalDocs-config")
+    # Include generated API HTML in install/release artifacts when present.
+    if(INSTALL_API_DOCS)
+      install(DIRECTORY "${DOXYGEN_OUTPUT_DIR}/html"
+              DESTINATION "share/doc/gd-${GDLIB_MAJOR}.${GDLIB_MINOR}/api"
+              OPTIONAL)
+    endif()
+  endif()
 else()
-  message(STATUS "SKIPPING generation of API documentation for JavaScript (Perl not found)")
+  message(STATUS "SKIPPING generation of API documentation (Doxygen not found)")
 endif()

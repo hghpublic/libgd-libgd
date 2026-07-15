@@ -3873,11 +3873,6 @@ gdFont gdFontSmallRep = {256, 0, 6, 13, gdFontSmallData};
 
 BGD_EXPORT_DATA_PROT gdFontPtr gdFontSmall = &gdFontSmallRep;
 
-/**
- * Function: gdFontGetSmall
- *
- * Returns the built-in small font.
- */
 BGD_DECLARE(gdFontPtr)
 gdFontGetSmall(void) { return gdFontSmall; }
 

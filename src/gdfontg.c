@@ -4384,11 +4384,6 @@ gdFont gdFontGiantRep = {256, 0, 9, 15, gdFontGiantData};
 
 BGD_EXPORT_DATA_PROT gdFontPtr gdFontGiant = &gdFontGiantRep;
 
-/**
- * Function: gdFontGetGiant
- *
- * Returns the built-in giant font.
- */
 BGD_DECLARE(gdFontPtr) gdFontGetGiant(void) { return gdFontGiant; }
 
 /* This file has not been truncated. */

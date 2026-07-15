@@ -2594,11 +2594,6 @@ gdFont gdFontTinyRep = {256, 0, 5, 8, gdFontTinyData};
 
 BGD_EXPORT_DATA_PROT gdFontPtr gdFontTiny = &gdFontTinyRep;
 
-/**
- * Function: gdFontGetTiny
- *
- * Returns the built-in tiny font.
- */
 BGD_DECLARE(gdFontPtr)
 gdFontGetTiny(void) { return gdFontTiny; }
 

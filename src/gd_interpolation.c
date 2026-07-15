@@ -1832,28 +1832,6 @@ static inline int gdInterpolationIsFixedFamily(const gdInterpolationMethod metho
     }
 }
 
-/**
- * Function: gdImageScale
- *
- * Scale an image
- *
- * Creates a new image, scaled to the requested size using the current
- * <gdInterpolationMethod>.
- *
- * Note that GD_WEIGHTED4 is not yet supported by this function.
- *
- * Parameters:
- *   src        - The source image.
- *   new_width  - The new width.
- *   new_height - The new height.
- *
- * Returns:
- *   The scaled image on success, NULL on failure.
- *
- * See also:
- *   - <gdImageCopyResized>
- *   - <gdImageCopyResampled>
- */
 BGD_DECLARE(gdImagePtr)
 gdImageScale(const gdImagePtr src, const unsigned int new_width, const unsigned int new_height)
 {
@@ -2331,26 +2309,6 @@ static gdImagePtr gdImageRotateGeneric(gdImagePtr src, const float degrees, cons
     return dst;
 }
 
-/**
- * Function: gdImageRotateInterpolated
- *
- * Rotate an image
- *
- * Creates a new image, counter-clockwise rotated by the requested angle
- * using the current <gdInterpolationMethod>. Non-square angles will add a
- * border with bgcolor.
- *
- * Parameters:
- *   src     - The source image.
- *   angle   - The angle in degrees.
- *   bgcolor - The color to fill the added background with.
- *
- * Returns:
- *   The rotated image on success, NULL on failure.
- *
- * See also:
- *   - <gdImageCopyRotated>
- */
 BGD_DECLARE(gdImagePtr)
 gdImageRotateInterpolated(const gdImagePtr src, const float angle, int bgcolor)
 {
@@ -2443,22 +2401,6 @@ static void gdImageClipRectangle(gdImagePtr im, gdRectPtr r)
     r->height = CLAMP(y1, c1y, c2y) - r->y + 1;
 }
 
-/**
- * Function: gdTransformAffineGetImage
- *  Applies an affine transformation to a region and return an image
- *  containing the complete transformation.
- *
- * Parameters:
- * 	dst - Pointer to a gdImagePtr to store the created image, NULL when
- *        the creation or the transformation failed
- *  src - Source image
- *  src_area - rectangle defining the source region to transform
- *  dstY - Y position in the destination image
- *  affine - The desired affine transformation
- *
- * Returns:
- *  GD_TRUE if the affine is rectilinear or GD_FALSE
- */
 BGD_DECLARE(int)
 gdTransformAffineGetImage(gdImagePtr *dst, const gdImagePtr src, gdRectPtr src_area,
                           const double affine[6])
@@ -2522,6 +2464,11 @@ gdTransformAffineGetImage(gdImagePtr *dst, const gdImagePtr src, gdRectPtr src_a
  *  index of colors
  */
 static int getPixelRgbInterpolated(gdImagePtr im, const int tcolor)
+
+/**
+ * @addtogroup TransformScaleRotate
+ * @{
+ */
 {
     unsigned char r, g, b, a;
     int ct;
@@ -2590,21 +2537,6 @@ static inline int gdAffineSample(const gdAffineSampleContext *ctx, const double 
     return GD_TRUE;
 }
 
-/**
- * Function: gdTransformAffineCopy
- *  Applies an affine transformation to a region and copy the result
- *  in a destination to the given position.
- *
- * Parameters:
- * 	dst - Image to draw the transformed image
- *  src - Source image
- *  dstX - X position in the destination image
- *  dstY - Y position in the destination image
- *  src_area - Rectangular region to rotate in the src image
- *
- * Returns:
- *  GD_TRUE on success or GD_FALSE on failure
- */
 BGD_DECLARE(int)
 gdTransformAffineCopy(gdImagePtr dst, int dst_x, int dst_y, const gdImagePtr src,
                       gdRectPtr src_region, const double affine[6])
@@ -2721,19 +2653,6 @@ gdTransformAffineCopy(gdImagePtr dst, int dst_x, int dst_y, const gdImagePtr src
     return GD_TRUE;
 }
 
-/**
- * Function: gdTransformAffineBoundingBox
- *  Returns the bounding box of an affine transformation applied to a
- *  rectangular area <gdRect>
- *
- * Parameters:
- * 	src - Rectangular source area for the affine transformation
- *  affine - the affine transformation
- *  bbox - the resulting bounding box
- *
- * Returns:
- *  GD_TRUE if the affine is rectilinear or GD_FALSE
- */
 BGD_DECLARE(int)
 gdTransformAffineBoundingBox(gdRectPtr src, const double affine[6], gdRectPtr bbox)
 {
@@ -2798,26 +2717,6 @@ gdTransformAffineBoundingBox(gdRectPtr src, const double affine[6], gdRectPtr bb
     return GD_TRUE;
 }
 
-/**
- * Group: Interpolation Method
- */
-
-/**
- * Function: gdImageSetInterpolationMethod
- *
- * Set the interpolation method for subsequent operations
- *
- * Parameters:
- *   im - The image.
- *   id - The interpolation method.
- *
- * Returns:
- *   Non-zero on success, zero on failure.
- *
- * See also:
- *   - <gdInterpolationMethod>
- *   - <gdImageGetInterpolationMethod>
- */
 BGD_DECLARE(int)
 gdImageSetInterpolationMethod(gdImagePtr im, gdInterpolationMethod id)
 {
@@ -2925,26 +2824,10 @@ gdImageSetInterpolationMethod(gdImagePtr im, gdInterpolationMethod id)
     return 1;
 }
 
-/**
- * Function: gdImageGetInterpolationMethod
- *
- * Get the current interpolation method
- *
- * This is here so that the value can be read via a language or VM with an FFI
- * but no (portable) way to extract the value from the struct.
- *
- * Parameters:
- *   im - The image.
- *
- * Returns:
- *   The current interpolation method.
- *
- * See also:
- *   - <gdInterpolationMethod>
- *   - <gdImageSetInterpolationMethod>
- */
 BGD_DECLARE(gdInterpolationMethod)
 gdImageGetInterpolationMethod(gdImagePtr im) { return im->interpolation_id; }
+
+/** @} */
 
 #ifdef _MSC_VER
 #pragma optimize("", on)

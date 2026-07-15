@@ -508,23 +508,6 @@ static void learn(nn_quant *nnq, int verbose) /* Stu: N.B. added parameter so th
                     ((float)alpha) / initalpha);
 }
 
-/**
- * Function: gdImageNeuQuant
- *
- * Creates a new palette image from a truecolor image
- *
- * This is the same as calling <gdImageCreatePaletteFromTrueColor> with the
- * quantization method <GD_QUANT_NEUQUANT>.
- *
- * Parameters:
- *   im            - The image.
- *   max_color     - The number of desired palette entries.
- *   sample_factor - The quantization precision between 1 (highest quality) and
- *                   10 (fastest).
- *
- * Returns:
- *   A newly create palette image; NULL on failure.
- */
 BGD_DECLARE(gdImagePtr)
 gdImageNeuQuant(gdImagePtr im, const int max_color, int sample_factor)
 {
