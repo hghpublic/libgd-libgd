@@ -2094,7 +2094,7 @@ BGD_DECLARE(const char *) gdJpegGetVersionString();
  *          exit(1);
  *        }
  *
- *        reader = gdWebpReadOpen(in);
+ *        reader = gdWebpReadOpen(in, NULL);
  *        fclose(in);
  *        if (reader == NULL || !gdWebpReadGetInfo(reader, &info)) {
  *          fprintf(stderr, "cannot read WebP\n");
@@ -2104,7 +2104,7 @@ BGD_DECLARE(const char *) gdJpegGetVersionString();
  *          exit(1);
  *        }
  *
- *        memset(&options, 0, sizeof(options));
+ *        gdWebpWriteOptionsInit(&options);
  *        options.canvasWidth = info.width;
  *        options.canvasHeight = info.height;
  *        options.loopCount = info.loopCount;
@@ -2184,7 +2184,7 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromWebpCtx(gdIOCtxPtr infile);
 
 /** @} */
 
-/** @name Animation Types And Constants */
+/** @name WebP Multi-Image Types And Constants */
 /** @{ */
 
 /**
@@ -2193,7 +2193,7 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromWebpCtx(gdIOCtxPtr infile);
  * Handles returned by gdWebpReadOpen(), gdWebpReadOpenCtx(), or
  * gdWebpReadOpenPtr() must be closed with gdWebpReadClose().
  */
-typedef struct gdWebpReadStruct *gdWebpReadPtr;
+typedef struct gdWebpRead *gdWebpReadPtr;
 
 /**
  * @brief Opaque WebP animation writer handle.
@@ -2202,7 +2202,7 @@ typedef struct gdWebpReadStruct *gdWebpReadPtr;
  * with gdWebpWriteClose(). Handles returned by gdWebpWriteOpenPtr() must be
  * finished with gdWebpWritePtrFinish().
  */
-typedef struct gdWebpWriteStruct *gdWebpWritePtr;
+typedef struct gdWebpWrite *gdWebpWritePtr;
 
 /**
  * @brief WebP container information.
@@ -2234,9 +2234,18 @@ typedef struct {
 } gdWebpFrameInfo;
 
 /**
+ * @brief WebP multi-image reader options.
+ */
+typedef struct {
+    size_t struct_size; /**< Size of this structure, set by gdWebpReadOptionsInit(). */
+    int coalesced;      /**< Non-zero to read full-canvas images, zero to read raw frame rectangles. */
+} gdWebpReadOptions;
+
+/**
  * @brief WebP animation writer options.
  */
 typedef struct {
+    size_t struct_size; /**< Size of this structure, set by gdWebpWriteOptionsInit(). */
     int canvasWidth;     /**< Canvas width in pixels, or 0 to use the first image width. */
     int canvasHeight;    /**< Canvas height in pixels, or 0 to use the first image height. */
     int loopCount;       /**< Animation loop count, or 0 for infinite looping. */
@@ -2249,6 +2258,28 @@ typedef struct {
     int kmax;            /**< Maximum distance between key frames, or 0 for libwebp default. */
     int allowMixed;      /**< Non-zero to allow mixed lossy and lossless frames. */
 } gdWebpWriteOptions;
+
+/**
+ * @brief Initialize WebP multi-image read options with gd defaults.
+ *
+ * The default reader mode is coalesced, so gdWebpReadNextImage() returns
+ * full-canvas rendered images. Set gdWebpReadOptions::coalesced to zero before
+ * opening the reader to read raw frame rectangles with gdWebpReadNextFrame().
+ *
+ * @param options Pointer to the read options structure to initialize.
+ */
+BGD_DECLARE(void) gdWebpReadOptionsInit(gdWebpReadOptions *options);
+
+/**
+ * @brief Initialize WebP multi-image write options with gd defaults.
+ *
+ * The default writer infers the canvas size from the first frame, writes lossy
+ * WebP with libwebp's default animation settings, and uses loopCount 0 for
+ * infinite looping.
+ *
+ * @param options Pointer to the write options structure to initialize.
+ */
+BGD_DECLARE(void) gdWebpWriteOptionsInit(gdWebpWriteOptions *options);
 
 /**
  * @brief WebP frame disposal methods.
@@ -2266,18 +2297,9 @@ enum {
     gdWebpBlendNone   /**< Replace the frame rectangle without alpha blending. */
 };
 
-/** WebP disposal method compatibility alias for gdWebpDisposeNone. */
-#define GD_WEBP_DISPOSE_NONE gdWebpDisposeNone
-/** WebP disposal method compatibility alias for gdWebpDisposeBackground. */
-#define GD_WEBP_DISPOSE_BACKGROUND gdWebpDisposeBackground
-/** WebP blend method compatibility alias for gdWebpBlendAlpha. */
-#define GD_WEBP_BLEND_ALPHA gdWebpBlendAlpha
-/** WebP blend method compatibility alias for gdWebpBlendNone. */
-#define GD_WEBP_BLEND_NONE gdWebpBlendNone
-
 /** @} */
 
-/** @name Animation Reading */
+/** @name WebP Multi-Image Reading */
 /** @{ */
 
 /**
@@ -2320,39 +2342,45 @@ BGD_DECLARE(int) gdWebpIsAnimatedPtr(int size, void *data);
  * @brief Open a WebP animation reader from a stdio file.
  *
  * gdWebpReadOpen() reads the WebP data into the reader and does not close fd.
- * The returned handle must be closed with gdWebpReadClose().
+ * Pass NULL for options to use gd defaults. The returned handle must be closed
+ * with gdWebpReadClose().
  *
  * @param fd Pointer to the input FILE stream.
+ * @param options Pointer to read options, or NULL for defaults.
  *
  * @return Returns a WebP reader handle on success, or NULL on failure.
  */
-BGD_DECLARE(gdWebpReadPtr) gdWebpReadOpen(FILE *fd);
+BGD_DECLARE(gdWebpReadPtr) gdWebpReadOpen(FILE *fd, const gdWebpReadOptions *options);
 
 /**
  * @brief Open a WebP animation reader from a gdIOCtx.
  *
  * gdWebpReadOpenCtx() reads the WebP data into the reader and does not close
- * in. The returned handle must be closed with gdWebpReadClose().
+ * in. Pass NULL for options to use gd defaults. The returned handle must be
+ * closed with gdWebpReadClose().
  *
  * @param in Pointer to the gdIOCtx input context.
+ * @param options Pointer to read options, or NULL for defaults.
  *
  * @return Returns a WebP reader handle on success, or NULL on failure.
  */
-BGD_DECLARE(gdWebpReadPtr) gdWebpReadOpenCtx(gdIOCtxPtr in);
+BGD_DECLARE(gdWebpReadPtr) gdWebpReadOpenCtx(gdIOCtxPtr in, const gdWebpReadOptions *options);
 
 /**
  * @brief Open a WebP animation reader from a memory buffer.
  *
  * The data buffer is borrowed for the duration of the call. The returned
  * handle owns its copy of the WebP data and must be closed with
- * gdWebpReadClose().
+ * gdWebpReadClose(). Pass NULL for options to use gd defaults.
  *
  * @param size Size of the WebP memory buffer in bytes.
  * @param data Pointer to the WebP memory buffer.
+ * @param options Pointer to read options, or NULL for defaults.
  *
  * @return Returns a WebP reader handle on success, or NULL on failure.
  */
-BGD_DECLARE(gdWebpReadPtr) gdWebpReadOpenPtr(int size, void *data);
+BGD_DECLARE(gdWebpReadPtr)
+gdWebpReadOpenPtr(int size, void *data, const gdWebpReadOptions *options);
 
 /**
  * @brief Close a WebP animation reader.
@@ -2364,7 +2392,7 @@ BGD_DECLARE(void) gdWebpReadClose(gdWebpReadPtr webp);
 /**
  * @brief Get WebP container information from an animation reader.
  *
- * @param webp WebP reader handle.
+ * @param webp WebP reader handle opened with raw-frame mode.
  * @param info Pointer to a gdWebpInfo structure to receive container information.
  *
  * @return Returns 1 on success, or 0 on failure.
@@ -2378,7 +2406,7 @@ BGD_DECLARE(int) gdWebpReadGetInfo(gdWebpReadPtr webp, gdWebpInfo *info);
  * caller-owned truecolor image that must be destroyed with @ref gdImageDestroy.
  * Passing NULL for frame advances the reader without returning the image.
  *
- * @param webp WebP reader handle.
+ * @param webp WebP reader handle opened with coalesced mode.
  * @param info Pointer to a gdWebpFrameInfo structure to receive frame information, or NULL.
  * @param frame Pointer to receive the caller-owned frame image, or NULL.
  *
@@ -2406,7 +2434,7 @@ gdWebpReadNextImage(gdWebpReadPtr webp, gdWebpFrameInfo *info, gdImagePtr *image
 
 /** @} */
 
-/** @name Animation Writing */
+/** @name WebP Multi-Image Writing */
 /** @{ */
 
 /**

@@ -41,7 +41,7 @@ int main(int argc, char **argv)
         return 1;
     }
     printf("animated: %s\n", gdWebpIsAnimated(in) == 1 ? "yes" : "no");
-    webp = gdWebpReadOpen(in);
+    webp = gdWebpReadOpen(in, NULL);
     fclose(in);
     if (webp == NULL) {
         fprintf(stderr, "cannot create WebP reader\n");

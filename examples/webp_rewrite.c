@@ -1,6 +1,5 @@
 #include <gd.h>
 #include <stdio.h>
-#include <string.h>
 
 int main(int argc, char **argv)
 {
@@ -22,7 +21,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "cannot open %s\n", argv[1]);
         return 1;
     }
-    reader = gdWebpReadOpen(in);
+    reader = gdWebpReadOpen(in, NULL);
     fclose(in);
     if (reader == NULL || !gdWebpReadGetInfo(reader, &info)) {
         fprintf(stderr, "cannot read animated WebP\n");
@@ -32,7 +31,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    memset(&options, 0, sizeof(options));
+    gdWebpWriteOptionsInit(&options);
     options.canvasWidth = info.width;
     options.canvasHeight = info.height;
     options.loopCount = info.loopCount;

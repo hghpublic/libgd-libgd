@@ -355,10 +355,10 @@ Ctx; if not available they silently fall back to uncompressed.
   lossless.
 - Default quality when `-1`: 80.
 
-**Animation read:** Two read modes:
-1. `gdWebpReadNextFrame` — raw frame data (per-frame RGBA at frame offset).
-2. `gdWebpReadNextImage` — coalesced frame (full-canvas RGBA rendered by the
-   decoder, mimicking browser rendering).
+**Animation read:** `gdWebpReadOptions` selects the reader mode:
+1. Raw frame rectangles — set `coalesced=0` and use `gdWebpReadNextFrame`.
+2. Coalesced full-canvas images — use the default `coalesced=1` and
+   `gdWebpReadNextImage`.
 
 **Animation write:** Imperative API with `gdWebpWriteOpen`,
 `gdWebpWriteAddImage`, `gdWebpWriteClose` / `gdWebpWritePtrFinish`.  Frames
@@ -392,18 +392,28 @@ typedef struct {
 } gdWebpFrameInfo;
 ```
 
-Dispose constants: `GD_WEBP_DISPOSE_NONE` (0), `GD_WEBP_DISPOSE_BACKGROUND` (1).
-Blend constants: `GD_WEBP_BLEND_ALPHA` (0), `GD_WEBP_BLEND_NONE` (1).
+Dispose constants: `gdWebpDisposeNone` (0), `gdWebpDisposeBackground` (1).
+Blend constants: `gdWebpBlendAlpha` (0), `gdWebpBlendNone` (1).
+
+### Read/write options
+
+```c
+typedef struct {
+    size_t struct_size;
+    int coalesced;        // nonzero = full-canvas images, zero = raw frames
+} gdWebpReadOptions;
+```
 
 ### Write options — `gdWebpWriteOptions`
 
 ```c
 typedef struct {
+    size_t struct_size;
     int canvasWidth;      // 0 = use first frame width
     int canvasHeight;     // 0 = use first frame height
     int loopCount;        // 0 = infinite
     int backgroundColor;
-    int quality;          // 0 = uses -1 (default 80)
+    int quality;          // -1 = default 80
     int lossless;         // 1 = force lossless
     int method;           // encoding method 0-6, -1 = default
     int minimizeSize;
@@ -427,6 +437,7 @@ typedef struct {
 **Probe**: `gdWebpIsAnimated` / `gdWebpIsAnimatedCtx` / `gdWebpIsAnimatedPtr`
 
 **Animation read**:
+- `gdWebpReadOptionsInit`
 - `gdWebpReadOpen` / `gdWebpReadOpenCtx` / `gdWebpReadOpenPtr`
 - `gdWebpReadGetInfo`
 - `gdWebpReadNextFrame` (raw)
@@ -434,6 +445,7 @@ typedef struct {
 - `gdWebpReadClose`
 
 **Animation write**:
+- `gdWebpWriteOptionsInit`
 - `gdWebpWriteOpen` / `gdWebpWriteOpenCtx` / `gdWebpWriteOpenPtr`
 - `gdWebpWriteAddImage` (duration in ms)
 - `gdWebpWriteClose` (assemble and write)

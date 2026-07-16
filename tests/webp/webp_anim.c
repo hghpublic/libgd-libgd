@@ -31,6 +31,7 @@ static void assert_pixel_rgb(gdImagePtr im, int x, int y, int r, int g, int b) {
 
 int main() {
 	gdWebpWriteOptions options;
+	gdWebpReadOptions readOptions;
 	gdWebpWritePtr writer;
 	gdWebpReadPtr reader;
 	gdWebpInfo info;
@@ -40,7 +41,7 @@ int main() {
 	void *data;
 	int size = 0;
 
-	memset(&options, 0, sizeof(options));
+	gdWebpWriteOptionsInit(&options);
 	options.canvasWidth = 4;
 	options.canvasHeight = 4;
 	options.loopCount = 3;
@@ -61,7 +62,9 @@ int main() {
 	gdTestAssert(size > 0);
 
 	gdTestAssert(gdWebpIsAnimatedPtr(size, data) == 1);
-	reader = gdWebpReadOpenPtr(size, data);
+	gdWebpReadOptionsInit(&readOptions);
+	readOptions.coalesced = 0;
+	reader = gdWebpReadOpenPtr(size, data, &readOptions);
 	gdTestAssert(reader != NULL);
 	gdTestAssert(gdWebpReadGetInfo(reader, &info));
 	gdTestAssert(info.width == 4);
@@ -95,7 +98,7 @@ int main() {
 	gdTestAssert(gdWebpReadNextFrame(reader, &frameInfo, NULL) == 0);
 	gdWebpReadClose(reader);
 
-	reader = gdWebpReadOpenPtr(size, data);
+	reader = gdWebpReadOpenPtr(size, data, NULL);
 	gdTestAssert(reader != NULL);
 	gdTestAssert(gdWebpReadNextImage(reader, &frameInfo, &image0) == 1);
 	gdTestAssert(frameInfo.frameIndex == 0);

@@ -2,6 +2,7 @@ IF(WEBP_FOUND)
 LIST(APPEND TESTS_FILES
 	bug00111
 	gdImageWebpEx
+	webp_api_symbols
 	webp_anim
 	webp_conformance
 	webp_ll_im2im

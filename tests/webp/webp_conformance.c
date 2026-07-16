@@ -77,7 +77,7 @@ static void assert_animation_iterator(const char *path, int size,
 	int frames = 0;
 	int result;
 
-	webp = gdWebpReadOpenPtr(size, data);
+	webp = gdWebpReadOpenPtr(size, data, NULL);
 	gdTestAssertMsg(webp != NULL,
 					"animated WebP reader rejected valid file: %s\n", path);
 	if (webp == NULL) {
@@ -162,7 +162,7 @@ static void assert_robust_file(const char *path) {
 	if (im != NULL) {
 		gdImageDestroy(im);
 	}
-	webp = gdWebpReadOpenPtr(size, data);
+	webp = gdWebpReadOpenPtr(size, data, NULL);
 	if (webp != NULL) {
 		gdWebpReadClose(webp);
 	}
