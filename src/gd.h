@@ -3460,16 +3460,16 @@ typedef struct {
  * EXIF and XMP profiles; ICC is not part of the public metadata path.
  */
 typedef struct {
-    int width;
-    int height;
-    int is_animation;
-    int is_progressive;
-    int frame_count;
-    double duration;
-    int has_alpha;
-    int bit_depth;
-    int yuv_format;
-    gdImageMetadata *metadata;
+    int width; /**< Image width in pixels. */
+    int height; /**< Image height in pixels. */
+    int is_animation; /**< Nonzero if the image is an animation. */
+    int is_progressive; /**< Nonzero if the image is progressive. */
+    int frame_count; /**< Number of frames in the animation. */
+    double duration; /**< Duration of the animation in seconds. */
+    int has_alpha; /**< Nonzero if the image has an alpha channel. */
+    int bit_depth; /**< Bit depth of the image. */
+    int yuv_format; /**< One of the GD_AVIF_PIXEL_FORMAT_* values. */
+    gdImageMetadata *metadata; /**< Pointer to the image metadata. */
 } gdAvifInfo;
 
 /** @brief Initialize AVIF information and clear the metadata pointer. */
@@ -4281,27 +4281,27 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromBmpCtx(gdIOCtxPtr infile);
 
 /** Descriptive facts read from a BMP file header. */
 typedef struct {
-	int file_size;
-	int pixel_offset;
-	int header_size;
-	int header_type;
-	int width;
-	int height;
-	int top_down;
-	int planes;
-	int bits_per_pixel;
-	int compression;
-	int image_size;
-	int horizontal_resolution;
-	int vertical_resolution;
-	int colors_used;
-	int important_colors;
-	int palette_type;
-	int palette_entries;
-	unsigned int red_mask;
-	unsigned int green_mask;
-	unsigned int blue_mask;
-	unsigned int alpha_mask;
+	int file_size; /**< Size of the BMP file in bytes. */
+	int pixel_offset; /**< Offset to the pixel data in the BMP file. */
+	int header_size; /**< Size of the BMP header in bytes. */
+	int header_type; /**< Type of the BMP header. */
+	int width; /**< Image width in pixels. */
+	int height; /**< Image height in pixels. */
+	int top_down; /**< Nonzero if the image is stored top-down. */
+	int planes; /**< Number of color planes. */
+	int bits_per_pixel; /**< Number of bits per pixel. */
+	int compression; /**< Compression method used. */
+	int image_size; /**< Size of the pixel data in bytes. */
+	int horizontal_resolution; /**< Horizontal resolution in pixels per meter. */
+	int vertical_resolution; /**< Vertical resolution in pixels per meter. */
+	int colors_used; /**< Number of colors used in the palette. */
+	int important_colors; /**< Number of important colors. */
+	int palette_type; /**< Type of the palette. */
+	int palette_entries; /**< Number of entries in the palette. */
+	unsigned int red_mask; /**< Red channel mask. */
+	unsigned int green_mask; /**< Green channel mask. */
+	unsigned int blue_mask; /**< Blue channel mask. */
+	unsigned int alpha_mask; /**< Alpha channel mask. */
 } gdBmpInfo;
 
 BGD_DECLARE(void) gdBmpInfoInit(gdBmpInfo *info);
@@ -4511,6 +4511,7 @@ BGD_DECLARE(void) gdUhdrImageDestroy(gdUhdrImagePtr im);
    'context' will be passed to your source function.
 
 */
+/** @deprecated in favor of gdIOCtx */
 typedef struct {
     int (*source)(void *context, char *buffer, int len);
     void *context;
@@ -4968,39 +4969,86 @@ BGD_DECLARE(void) gdImageBmpCtx(gdImagePtr im, gdIOCtxPtr out, int compression);
 /** @} */
 
 /** @name BMP Constants */
-/** @{ */
+/** @addtogroup gdCodecBmp
+  @{ */
 
-/** Write uncompressed BMP pixel data. */
-#define GD_BMP_COMPRESS_NONE 0
-/** Write BI_RLE8 compressed pixel data; valid only for 8 bpp output. */
+/** @brief Write uncompressed BMP pixel data. */
+#define GD_BMP_COMPRESS_NONE 0 
+/** @brief Write BI_RLE8 compressed pixel data; valid only for 8 bpp output. */
 #define GD_BMP_COMPRESS_RLE8 1
-/** Write BI_RLE4 compressed pixel data; valid only for 4 bpp output. */
+/** @brief Write BI_RLE4 compressed pixel data; valid only for 4 bpp output. */
 #define GD_BMP_COMPRESS_RLE4 2
 
-/** Use default BMP writer behavior. */
+/** @brief Use default BMP writer behavior. */
 #define GD_BMP_FLAG_NONE 0
-/** Force output to use a BITMAPV4HEADER. */
+/** @brief Force output to use a BITMAPV4HEADER. */
 #define GD_BMP_FLAG_FORCE_V4HDR (1 << 0)
-/** Allow lossy truecolor-to-indexed conversion for 1, 4, or 8 bpp output. */
+/** @brief Allow lossy truecolor-to-indexed conversion for 1, 4, or 8 bpp output. */
 #define GD_BMP_FLAG_QUANTIZE (1 << 1)
-/** Use RGB555 bit masks instead of RGB565 for 16 bpp output. */
+/** @brief Use RGB555 bit masks instead of RGB565 for 16 bpp output. */
 #define GD_BMP_FLAG_RGB555 (1 << 2)
 
+/**
+ * @brief Structured BMP writer options.
+ */
 typedef struct {
-	int bits_per_pixel;
-	int compression;
-	int flags;
+	int bits_per_pixel; /**< Requested output bit depth, or 0 for automatic selection. */
+	int compression; /**< One of GD_BMP_COMPRESS_* values. */
+	int flags; /**< Bitwise OR of GD_BMP_FLAG_* values. */
 	const gdImageMetadata *metadata; /**< Reserved and ignored for BMP. */
 } gdBmpWriteOptions;
 
+/**
+ * @brief Initialize a gdBmpWriteOptions structure to default values.
+ * 
+ * Updates or changes to the default values are not guaranteed to be compatible with future versions of gd. Callers should not assume that the default values will remain the same across versions.
+ * This is not considered part of the API contract and may change without notice. Callers should always explicitly set the fields they care about after calling this function.
+ */
 BGD_DECLARE(void) gdBmpWriteOptionsInit(gdBmpWriteOptions *options);
+
+/**
+ * @brief Write an image as BMP data to a stdio file with explicit options.
+ * 
+ * @param im The image to write.
+ * @param outFile Pointer to the output FILE stream.
+ * @param options Pointer to a gdBmpWriteOptions structure specifying output options.
+ * 
+ * @return 0 on success, or a nonzero error code on failure.
+ * 
+ * @see gdBmpWriteOptionsInit gdBmpWriteOptions
+ */
 BGD_DECLARE(int) gdImageBmpWithOptions(gdImagePtr im, FILE *outFile, const gdBmpWriteOptions *options);
+
+/**
+ * @brief Write an image as BMP data to a gdIOCtx with explicit options.
+ * 
+ * @param im The image to write.
+ * @param out Pointer to the gdIOCtx output context.
+ * @param options Pointer to a gdBmpWriteOptions structure specifying output options.
+ * 
+ * @return 0 on success, or a nonzero error code on failure.
+ * @see gdBmpWriteOptionsInit gdBmpWriteOptions
+ */
 BGD_DECLARE(int) gdImageBmpCtxWithOptions(gdImagePtr im, gdIOCtxPtr out, const gdBmpWriteOptions *options);
+
+/**
+ * @brief Write an image as BMP data to a newly allocated memory buffer with explicit options.
+ * 
+ * @param im The image to write.
+ * @param size Output location for the returned buffer size in bytes.
+ * @param options Pointer to a gdBmpWriteOptions structure specifying output options.
+ * 
+ * @return A newly allocated BMP buffer, or NULL on error. The caller is responsible for freeing the buffer with gdFree().
+ * 
+ * @see gdBmpWriteOptionsInit gdBmpWriteOptions
+ */
 BGD_DECLARE(void *) gdImageBmpPtrWithOptions(gdImagePtr im, int *size, const gdBmpWriteOptions *options);
 
 /** @} */
 
-/** @name BMP Extended Writing */
+/** @name BMP Extended Writing
+ * @addtogroup gdCodecBmp
+ */
 /** @{ */
 
 /**
@@ -5706,12 +5754,15 @@ gdImageWebpCtx(gdImagePtr im, gdIOCtxPtr outfile, int quantization);
 
 */
 
+/** @deprecated in favor of gdIOCtx */
 typedef struct {
     int (*sink)(void *context, const char *buffer, int len);
     void *context;
 } gdSink, *gdSinkPtr;
 
+/** @deprecated in favor of gdIOCtx */
 BGD_DECLARE(void) gdImagePngToSink(gdImagePtr im, gdSinkPtr out);
+/** @deprecated in favor of gdIOCtx */
 BGD_DECLARE(void) gdImageQoiToSink(gdImagePtr im, gdSinkPtr out);
 
 /**
@@ -5724,7 +5775,8 @@ BGD_DECLARE(void) gdImageQoiToSink(gdImagePtr im, gdSinkPtr out);
 
 /**
  * @brief Write an image as GD2 data to a stdio file.
- *
+ * @deprecated
+ * 
  * gdImageGd2() borrows im and out for the duration of the call and does not
  * close out. Pass cs as 0 to use GD2_CHUNKSIZE; otherwise values outside the
  * GD2_CHUNKSIZE_MIN to GD2_CHUNKSIZE_MAX range are clamped. The public fmt
@@ -5740,7 +5792,8 @@ BGD_DECLARE(void) gdImageGd2(gdImagePtr im, FILE *out, int cs, int fmt);
 
 /**
  * @brief Write an image as GD2 data to a newly allocated memory buffer.
- *
+ * @deprecated
+ * 
  * gdImageGd2Ptr() borrows im for the duration of the call. Pass cs as 0 to use
  * GD2_CHUNKSIZE; otherwise values outside the GD2_CHUNKSIZE_MIN to
  * GD2_CHUNKSIZE_MAX range are clamped. The public fmt values are GD2_FMT_RAW
