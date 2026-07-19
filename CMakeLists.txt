@@ -511,6 +511,9 @@ INSTALL(FILES examples/tiffread.c DESTINATION share/doc/gd-${GDLIB_MAJOR}.${GDLI
 INSTALL(FILES examples/tiff_write_pages.c DESTINATION share/doc/gd-${GDLIB_MAJOR}.${GDLIB_MINOR})
 INSTALL(FILES examples/uhdr.c DESTINATION share/doc/gd-${GDLIB_MAJOR}.${GDLIB_MINOR})
 INSTALL(FILES examples/windows.c DESTINATION share/doc/gd-${GDLIB_MAJOR}.${GDLIB_MINOR})
+INSTALL(FILES examples/metadata_libexif.c DESTINATION share/doc/gd-${GDLIB_MAJOR}.${GDLIB_MINOR})
+INSTALL(FILES examples/metadata/usfws_fire.jpg examples/metadata/README.md
+        DESTINATION share/doc/gd-${GDLIB_MAJOR}.${GDLIB_MINOR}/metadata)
 endif(BUILD_EXAMPLES)
 
 if(BUILD_CPACK)

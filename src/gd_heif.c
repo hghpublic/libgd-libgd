@@ -11,6 +11,7 @@
 #include "gd.h"
 #include "gd_errors.h"
 #include "gdhelpers.h"
+#include "gd_heif_metadata.h"
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -35,12 +36,16 @@ static gdImagePtr _gdImageCreateFromHeifCtx(gdIOCtx *infile, gd_heif_brand expec
 
 BGD_DECLARE(void) gdHeifReadOptionsInit(gdHeifReadOptions *options)
 {
+    if (options == NULL)
+        return;
     memset(options, 0, sizeof(*options));
     options->ignore_transformations = GD_TRUE;
 }
 
 BGD_DECLARE(void) gdHeifWriteOptionsInit(gdHeifWriteOptions *options)
 {
+    if (options == NULL)
+        return;
     memset(options, 0, sizeof(*options));
     options->quality = -1;
     options->lossless = GD_FALSE;
@@ -277,6 +282,7 @@ static int _gdImageHeifCtx(gdImagePtr im, gdIOCtx *outfile, const gdHeifWriteOpt
     struct heif_context *heif_ctx;
     struct heif_encoder *heif_enc;
     struct heif_image *heif_im;
+    struct heif_image_handle *heif_imhandle = NULL;
     struct heif_writer heif_wr;
     struct heif_error err;
     uint8_t *rgba;
@@ -407,10 +413,17 @@ static int _gdImageHeifCtx(gdImagePtr im, gdIOCtx *outfile, const gdHeifWriteOpt
         }
         row_start += stride;
     }
-    err = heif_context_encode_image(heif_ctx, heif_im, heif_enc, NULL, NULL);
+    err = heif_context_encode_image(heif_ctx, heif_im, heif_enc, NULL, &heif_imhandle);
     heif_encoder_release(heif_enc);
-    if (err.code != heif_error_Ok) {
+    if (err.code != heif_error_Ok || heif_imhandle == NULL) {
         gd_error("gd-heif encoding failed\n");
+        heif_image_release(heif_im);
+        heif_context_free(heif_ctx);
+        return GD_FALSE;
+    }
+    if (options->metadata != NULL && gdHeifApplyMetadata(heif_ctx, heif_im, heif_imhandle, options->metadata) != GD_META_OK) {
+        gd_error("gd-heif metadata application failed\n");
+        heif_image_handle_release(heif_imhandle);
         heif_image_release(heif_im);
         heif_context_free(heif_ctx);
         return GD_FALSE;
@@ -419,6 +432,7 @@ static int _gdImageHeifCtx(gdImagePtr im, gdIOCtx *outfile, const gdHeifWriteOpt
     heif_wr.writer_api_version = 1;
     err = heif_context_write(heif_ctx, &heif_wr, (void *)outfile);
 
+    heif_image_handle_release(heif_imhandle);
     heif_image_release(heif_im);
     heif_context_free(heif_ctx);
     if (err.code != heif_error_Ok) {
@@ -441,6 +455,33 @@ gdImageHeifCtx(gdImagePtr im, gdIOCtx *outfile, int quality, gdHeifCodec codec, 
     options.codec = codec;
     options.chroma = chroma;
     _gdImageHeifCtx(im, outfile, &options);
+}
+
+BGD_DECLARE(int)
+gdImageHeifCtxWithOptions(gdImagePtr im, gdIOCtx *outfile, const gdHeifWriteOptions *options)
+{
+    if (im == NULL || outfile == NULL) {
+        return GD_FALSE;
+    }
+    return _gdImageHeifCtx(im, outfile, options) ? 0 : 1;
+}
+
+BGD_DECLARE(int)
+gdImageHeifWithOptions(gdImagePtr im, FILE *outFile, const gdHeifWriteOptions *options)
+{
+    gdIOCtx *out;
+    int status;
+
+    if (im == NULL || outFile == NULL) {
+        return 1;
+    }
+    out = gdNewFileCtx(outFile);
+    if (out == NULL) {
+        return 1;
+    }
+    status = gdImageHeifCtxWithOptions(im, out, options);
+    out->gd_free(out);
+    return status;
 }
 
 BGD_DECLARE(void)
@@ -519,12 +560,16 @@ static void _noHeifError(void) { gd_error("HEIF image support has been disabled\
 
 BGD_DECLARE(void) gdHeifReadOptionsInit(gdHeifReadOptions *options)
 {
+    if (options == NULL)
+        return;
     memset(options, 0, sizeof(*options));
     options->ignore_transformations = GD_TRUE;
 }
 
 BGD_DECLARE(void) gdHeifWriteOptionsInit(gdHeifWriteOptions *options)
 {
+    if (options == NULL)
+        return;
     memset(options, 0, sizeof(*options));
     options->quality = -1;
     options->lossless = GD_FALSE;
@@ -589,6 +634,26 @@ gdImageHeifPtrWithOptions(gdImagePtr im, int *size, const gdHeifWriteOptions *op
 {
     _noHeifError();
     return NULL;
+}
+
+BGD_DECLARE(int)
+gdImageHeifCtxWithOptions(gdImagePtr im, gdIOCtx *outfile, const gdHeifWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(outfile);
+    ARG_NOT_USED(options);
+    _noHeifError();
+    return 1;
+}
+
+BGD_DECLARE(int)
+gdImageHeifWithOptions(gdImagePtr im, FILE *outFile, const gdHeifWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(outFile);
+    ARG_NOT_USED(options);
+    _noHeifError();
+    return 1;
 }
 
 #endif /* HAVE_LIBHEIF */

@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "gd.h"
+#include "gd_avif_metadata.h"
 #include "gd_errors.h"
 #include "gd_intern.h"
 #include "gdhelpers.h"
@@ -99,6 +100,8 @@ static int quality2Quantizer(int quality)
 
 BGD_DECLARE(void) gdAvifWriteOptionsInit(gdAvifWriteOptions *options)
 {
+    if (options == NULL)
+        return;
     memset(options, 0, sizeof(*options));
     options->quality = QUALITY_DEFAULT;
     options->speed = SPEED_DEFAULT;
@@ -465,8 +468,7 @@ static avifBool _gdImageAvifCtx(gdImagePtr im, gdIOCtx *outfile, const gdAvifWri
         break;
     }
 
-    // Create the AVIF image.
-    // Set the ICC to sRGB, as that's what gd supports right now.
+
     // Note that MATRIX_COEFFICIENTS_IDENTITY enables lossless conversion from
     // RGB to YUV.
 
@@ -480,6 +482,11 @@ static avifBool _gdImageAvifCtx(gdImagePtr im, gdIOCtx *outfile, const gdAvifWri
     avifIm->transferCharacteristics = AVIF_TRANSFER_CHARACTERISTICS_SRGB;
     avifIm->matrixCoefficients =
         lossless ? AVIF_MATRIX_COEFFICIENTS_IDENTITY : AVIF_MATRIX_COEFFICIENTS_BT709;
+
+    if (gdAvifApplyMetadata(avifIm, options->metadata) != GD_META_OK) {
+        gd_error("avif error - Applying metadata failed\n");
+        goto cleanup;
+    }
 
     avifRGBImageSetDefaults(&rgb, avifIm);
     // this allocates memory, and sets rgb.rowBytes and rgb.pixels.
@@ -613,6 +620,33 @@ gdImageAvifPtrWithOptions(gdImagePtr im, int *size, const gdAvifWriteOptions *op
     return rv;
 }
 
+BGD_DECLARE(int)
+gdImageAvifCtxWithOptions(gdImagePtr im, gdIOCtx *outfile, const gdAvifWriteOptions *options)
+{
+    if (im == NULL || outfile == NULL) {
+        return 1;
+    }
+    return _gdImageAvifCtx(im, outfile, options) ? 1 : 0;
+}
+
+BGD_DECLARE(int)
+gdImageAvifWithOptions(gdImagePtr im, FILE *outFile, const gdAvifWriteOptions *options)
+{
+    gdIOCtx *out;
+    int status;
+
+    if (im == NULL || outFile == NULL) {
+        return 1;
+    }
+    out = gdNewFileCtx(outFile);
+    if (out == NULL) {
+        return 1;
+    }
+    status = gdImageAvifCtxWithOptions(im, out, options);
+    out->gd_free(out);
+    return status;
+}
+
 BGD_DECLARE(void *) gdImageAvifPtr(gdImagePtr im, int *size)
 {
     return gdImageAvifPtrEx(im, size, QUALITY_DEFAULT, AVIF_SPEED_DEFAULT);
@@ -639,6 +673,8 @@ static void *_noAvifError(void)
 
 BGD_DECLARE(void) gdAvifWriteOptionsInit(gdAvifWriteOptions *options)
 {
+    if (options == NULL)
+        return;
     memset(options, 0, sizeof(*options));
     options->quality = -1;
     options->speed = 6;
@@ -717,6 +753,26 @@ gdImageAvifPtrWithOptions(gdImagePtr im, int *size, const gdAvifWriteOptions *op
     ARG_NOT_USED(size);
     ARG_NOT_USED(options);
     return _noAvifError();
+}
+
+BGD_DECLARE(int)
+gdImageAvifCtxWithOptions(gdImagePtr im, gdIOCtx *outfile, const gdAvifWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(outfile);
+    ARG_NOT_USED(options);
+    _noAvifError();
+    return 1;
+}
+
+BGD_DECLARE(int)
+gdImageAvifWithOptions(gdImagePtr im, FILE *outfile, const gdAvifWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(outfile);
+    ARG_NOT_USED(options);
+    _noAvifError();
+    return 1;
 }
 
 #endif /* HAVE_LIBAVIF */

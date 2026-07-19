@@ -30,7 +30,7 @@ static void assert_pixel_rgb(gdImagePtr im, int x, int y, int r, int g, int b) {
 }
 
 int main() {
-	gdWebpWriteOptions options;
+	gdWebpAnimWriteOptions options;
 	gdWebpReadOptions readOptions;
 	gdWebpWritePtr writer;
 	gdWebpReadPtr reader;
@@ -41,7 +41,7 @@ int main() {
 	void *data;
 	int size = 0;
 
-	gdWebpWriteOptionsInit(&options);
+	gdWebpAnimWriteOptionsInit(&options);
 	options.canvasWidth = 4;
 	options.canvasHeight = 4;
 	options.loopCount = 3;

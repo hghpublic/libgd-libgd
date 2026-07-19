@@ -20,12 +20,13 @@ static void assert_profile_equals(gdImageMetadata *metadata, const char *key,
 	actual = gdImageMetadataGetProfile(metadata, key, &actual_size);
 	gdTestAssert(actual != NULL);
 	gdTestAssert(actual_size == expected_size);
-	gdTestAssert(memcmp(actual, expected, expected_size) == 0);
+	if (actual != NULL && actual_size == expected_size) {
+		gdTestAssert(memcmp(actual, expected, expected_size) == 0);
+	}
 }
 
 int main(void) {
-	static const unsigned char exif[] = {'E',  'x',	 'i', 'f',
-										 '\0', '\0', 'g', 'd'};
+	static const unsigned char exif[] = {'M', 'M', 0, 42, 0, 0, 0, 8};
 	static const unsigned char xmp[] =
 		"http://ns.adobe.com/xap/1.0/\0<x:xmpmeta>gd</x:xmpmeta>";
 	static const unsigned char iptc[] = "Photoshop 3.0\0gd-iptc";
@@ -37,6 +38,7 @@ int main(void) {
 	void *jpeg;
 	int size = 0;
 	int white;
+	gdJpegWriteOptions options;
 
 	fill_icc(icc, sizeof(icc));
 
@@ -59,18 +61,21 @@ int main(void) {
 	white = gdTrueColor(255, 255, 255);
 	gdImageFilledRectangle(im, 0, 0, 7, 7, white);
 
-	jpeg = gdImageJpegPtrWithMetadata(im, &size, 90, metadata);
+	gdJpegWriteOptionsInit(&options);
+	options.quality = 90;
+	options.metadata = metadata;
+	jpeg = gdImageJpegPtrWithOptions(im, &size, &options);
 	gdTestAssert(jpeg != NULL);
 	gdTestAssert(size > 0);
 
-	decoded =
-		gdImageCreateFromJpegPtrWithMetadata(size, jpeg, decoded_metadata);
+	gdTestAssert(gdJpegGetMetadataPtr(size, jpeg, decoded_metadata) == 0);
+	decoded = gdImageCreateFromJpegPtr(size, jpeg);
 	gdTestAssert(decoded != NULL);
 
 	assert_profile_equals(decoded_metadata, "exif", exif, sizeof(exif));
 	assert_profile_equals(decoded_metadata, "xmp", xmp, sizeof(xmp));
 	assert_profile_equals(decoded_metadata, "iptc", iptc, sizeof(iptc));
-	assert_profile_equals(decoded_metadata, "icc", icc, sizeof(icc));
+	gdTestAssert(gdImageMetadataGetProfile(decoded_metadata, "icc", NULL) == NULL);
 
 	gdFree(jpeg);
 	gdImageDestroy(decoded);

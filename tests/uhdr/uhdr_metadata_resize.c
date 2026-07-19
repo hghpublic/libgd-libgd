@@ -341,15 +341,19 @@ cleanup:
 }
 
 static int read_uhdr_base_jpeg_metadata(const char *path,
-										gdImageMetadata *metadata) {
+										gdImageMetadata *metadata,
+										unsigned char **icc_out, size_t *icc_size_out) {
 	unsigned char *data = NULL;
 	int size = 0;
 	uhdr_codec_private_t *dec = NULL;
 	uhdr_compressed_image_t input;
 	uhdr_mem_block_t *base;
+	uhdr_mem_block_t *icc;
 	uhdr_error_info_t rc;
 	gdImagePtr decoded = NULL;
 	int ok = 0;
+	*icc_out = NULL;
+	*icc_size_out = 0;
 
 	data = read_binary_file(path, &size);
 	if (!data) {
@@ -391,6 +395,7 @@ static int read_uhdr_base_jpeg_metadata(const char *path,
 	}
 
 	base = uhdr_dec_get_base_image(dec);
+	icc = uhdr_dec_get_icc(dec);
 	if (!base || !base->data || base->data_sz == 0 ||
 		base->data_sz > (size_t)INT_MAX) {
 		gdTestErrorMsg("missing or oversized compressed base image during "
@@ -398,12 +403,32 @@ static int read_uhdr_base_jpeg_metadata(const char *path,
 		goto cleanup;
 	}
 
-	decoded = gdImageCreateFromJpegPtrWithMetadata((int)base->data_sz,
-												   base->data, metadata);
+	if (gdJpegGetMetadataPtr((int)base->data_sz, base->data, metadata) != 0) {
+		decoded = NULL;
+	} else {
+		decoded = gdImageCreateFromJpegPtr((int)base->data_sz, base->data);
+	}
 	if (!decoded) {
 		gdTestErrorMsg(
 			"failed to decode compressed base image during metadata check\n");
 		goto cleanup;
+	}
+	if (icc && icc->data && icc->data_sz > 0) {
+		const unsigned char *icc_data = (const unsigned char *)icc->data;
+		size_t icc_size = icc->data_sz;
+		static const unsigned char icc_marker[] = "ICC_PROFILE\0";
+		if (icc_size >= sizeof(icc_marker) + 2 &&
+			memcmp(icc_data, icc_marker, sizeof(icc_marker)) == 0) {
+			icc_data += sizeof(icc_marker) + 2;
+			icc_size -= sizeof(icc_marker) + 2;
+		}
+		*icc_out = (unsigned char *)malloc(icc_size);
+		if (!*icc_out) {
+			gdTestErrorMsg("failed to copy base ICC profile during metadata check\n");
+			goto cleanup;
+		}
+		memcpy(*icc_out, icc_data, icc_size);
+		*icc_size_out = icc_size;
 	}
 
 	ok = 1;
@@ -411,6 +436,11 @@ static int read_uhdr_base_jpeg_metadata(const char *path,
 cleanup:
 	if (decoded) {
 		gdImageDestroy(decoded);
+	}
+	if (!ok) {
+		free(*icc_out);
+		*icc_out = NULL;
+		*icc_size_out = 0;
 	}
 	uhdr_release_decoder(dec);
 	free(data);
@@ -571,27 +601,9 @@ cleanup:
 	return ok;
 }
 
-static int metadata_profile_matches(const gdImageMetadata *lhs,
-									const gdImageMetadata *rhs, const char *key,
-									const char *label) {
-	const unsigned char *lhs_profile;
-	const unsigned char *rhs_profile;
-	size_t lhs_size = 0;
-	size_t rhs_size = 0;
-
-	lhs_profile = gdImageMetadataGetProfile(lhs, key, &lhs_size);
-	rhs_profile = gdImageMetadataGetProfile(rhs, key, &rhs_size);
-	if (!lhs_profile || !rhs_profile) {
-		gdTestErrorMsg("missing %s profile during metadata check\n", label);
-		return 0;
-	}
-	if (lhs_size != rhs_size ||
-		memcmp(lhs_profile, rhs_profile, lhs_size) != 0) {
-		gdTestErrorMsg("%s profile changed during metadata check\n", label);
-		return 0;
-	}
-
-	return 1;
+static int icc_profiles_match(const unsigned char *lhs, size_t lhs_size,
+							 const unsigned char *rhs, size_t rhs_size) {
+	return lhs && rhs && lhs_size == rhs_size && memcmp(lhs, rhs, lhs_size) == 0;
 }
 
 int main(void) {
@@ -605,6 +617,10 @@ int main(void) {
 	gdUhdrImagePtr reloaded = NULL;
 	gdImageMetadata *src_base_metadata = NULL;
 	gdImageMetadata *gd_base_metadata = NULL;
+	unsigned char *src_icc = NULL;
+	unsigned char *gd_icc = NULL;
+	size_t src_icc_size = 0;
+	size_t gd_icc_size = 0;
 	gdUhdrError err;
 	int rc;
 
@@ -641,7 +657,8 @@ int main(void) {
 		goto cleanup;
 	}
 	if (!gdTestAssertMsg(
-			read_uhdr_base_jpeg_metadata(sample_path, src_base_metadata),
+			read_uhdr_base_jpeg_metadata(sample_path, src_base_metadata, &src_icc,
+											  &src_icc_size),
 			"failed to read source base JPEG metadata\n")) {
 		goto cleanup;
 	}
@@ -689,13 +706,13 @@ int main(void) {
 		goto cleanup;
 	}
 	if (!gdTestAssertMsg(
-			read_uhdr_base_jpeg_metadata(gd_out_jpg, gd_base_metadata),
+			read_uhdr_base_jpeg_metadata(gd_out_jpg, gd_base_metadata, &gd_icc,
+											  &gd_icc_size),
 			"failed to read resized output base JPEG metadata\n")) {
 		goto cleanup;
 	}
 	if (!gdTestAssertMsg(
-			metadata_profile_matches(src_base_metadata, gd_base_metadata, "icc",
-									 "base ICC"),
+			icc_profiles_match(src_icc, src_icc_size, gd_icc, gd_icc_size),
 			"resized output should preserve the base ICC profile exactly\n")) {
 		goto cleanup;
 	}
@@ -743,6 +760,8 @@ cleanup:
 	if (src_base_metadata) {
 		gdImageMetadataFree(src_base_metadata);
 	}
+	free(src_icc);
+	free(gd_icc);
 	gdFree(sample_path);
 	gdFree(src_meta);
 	gdFree(src_raw);

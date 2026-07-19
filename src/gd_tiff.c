@@ -78,6 +78,222 @@ GD_TIFF_COMPILE_ASSERT(photometric_mask,
                        GD_TIFF_PHOTOMETRIC_TRANSPARENCY_MASK == PHOTOMETRIC_MASK);
 GD_TIFF_COMPILE_ASSERT(photometric_separated,
                        GD_TIFF_PHOTOMETRIC_SEPARATED == PHOTOMETRIC_SEPARATED);
+
+#define GD_TIFF_META_MAGIC "GDTF"
+#define GD_TIFF_META_HEADER_SIZE 16
+
+static TIFFExtendProc gd_tiff_metadata_parent_extender;
+static const TIFFFieldInfo gd_tiff_metadata_fields[] = {
+    {33550, 3, 3, TIFF_DOUBLE, FIELD_CUSTOM, 1, 0, "ModelPixelScaleTag"},
+    {33922, 6, 6, TIFF_DOUBLE, FIELD_CUSTOM, 1, 0, "ModelTiepointTag"},
+    {34735, TIFF_VARIABLE2, TIFF_VARIABLE2, TIFF_SHORT, FIELD_CUSTOM, 1, 1, "GeoKeyDirectoryTag"},
+    {34736, TIFF_VARIABLE2, TIFF_VARIABLE2, TIFF_DOUBLE, FIELD_CUSTOM, 1, 1, "GeoDoubleParamsTag"},
+    {34737, TIFF_VARIABLE2, TIFF_VARIABLE2, TIFF_ASCII, FIELD_CUSTOM, 1, 1, "GeoAsciiParamsTag"},
+};
+
+static void gd_tiff_metadata_extender(TIFF *tif)
+{
+    if (gd_tiff_metadata_parent_extender != NULL) {
+        gd_tiff_metadata_parent_extender(tif);
+    }
+    TIFFMergeFieldInfo(tif, gd_tiff_metadata_fields,
+                       sizeof(gd_tiff_metadata_fields) / sizeof(gd_tiff_metadata_fields[0]));
+}
+
+static void gd_tiff_metadata_register_fields(void)
+{
+    static int registered;
+    if (!registered) {
+        gd_tiff_metadata_parent_extender = TIFFSetTagExtender(gd_tiff_metadata_extender);
+        registered = 1;
+    }
+}
+
+static void gd_tiff_metadata_put16(unsigned char *p, uint16_t value)
+{
+    p[0] = (unsigned char) value;
+    p[1] = (unsigned char) (value >> 8);
+}
+
+static void gd_tiff_metadata_put32(unsigned char *p, uint32_t value)
+{
+    p[0] = (unsigned char) value;
+    p[1] = (unsigned char) (value >> 8);
+    p[2] = (unsigned char) (value >> 16);
+    p[3] = (unsigned char) (value >> 24);
+}
+
+static uint16_t gd_tiff_metadata_get16(const unsigned char *p)
+{
+    return (uint16_t) p[0] | ((uint16_t) p[1] << 8);
+}
+
+static uint32_t gd_tiff_metadata_get32(const unsigned char *p)
+{
+    return (uint32_t) p[0] | ((uint32_t) p[1] << 8) | ((uint32_t) p[2] << 16) | ((uint32_t) p[3] << 24);
+}
+
+static int gd_tiff_metadata_is_little_endian(void)
+{
+    const uint16_t value = 1;
+    return *(const unsigned char *) &value == 1;
+}
+
+static void gd_tiff_metadata_copy_numeric(unsigned char *dst, const unsigned char *src,
+                                           size_t element_size, size_t count)
+{
+    size_t i;
+    if (gd_tiff_metadata_is_little_endian() && dst != src) {
+        memcpy(dst, src, element_size * count);
+        return;
+    }
+    for (i = 0; i < count; i++) {
+        size_t j;
+        if (dst == src) {
+            for (j = 0; j < element_size / 2; j++) {
+                unsigned char temp = dst[i * element_size + j];
+                dst[i * element_size + j] = dst[i * element_size + element_size - j - 1];
+                dst[i * element_size + element_size - j - 1] = temp;
+            }
+        } else {
+            for (j = 0; j < element_size; j++) {
+                dst[i * element_size + j] = src[i * element_size + element_size - j - 1];
+            }
+        }
+    }
+}
+
+static int gd_tiff_metadata_profile(uint32_t tag, TIFFDataType type,
+                                    uint32_t count, const void *data, size_t element_size,
+                                    gdImageMetadata *metadata)
+{
+    size_t payload_size;
+    size_t total_size;
+    unsigned char *encoded;
+    char profile_key[32];
+
+    if (count > SIZE_MAX / element_size) {
+        return GD_META_ERR_LIMIT;
+    }
+    payload_size = element_size * (size_t) count;
+    if (payload_size > SIZE_MAX - GD_TIFF_META_HEADER_SIZE) {
+        return GD_META_ERR_LIMIT;
+    }
+    total_size = GD_TIFF_META_HEADER_SIZE + payload_size;
+    if (total_size > INT_MAX) {
+        return GD_META_ERR_LIMIT;
+    }
+    encoded = (unsigned char *) gdMalloc(total_size);
+    if (encoded == NULL) {
+        return GD_META_ERR_NOMEM;
+    }
+    memcpy(encoded, GD_TIFF_META_MAGIC, 4);
+    encoded[4] = 1;
+    encoded[5] = 1;
+    gd_tiff_metadata_put16(encoded + 6, (uint16_t) type);
+    gd_tiff_metadata_put32(encoded + 8, count);
+    gd_tiff_metadata_put32(encoded + 12, (uint32_t) payload_size);
+    if (type == TIFF_ASCII) {
+        memcpy(encoded + GD_TIFF_META_HEADER_SIZE, data, payload_size);
+    } else {
+        gd_tiff_metadata_copy_numeric(encoded + GD_TIFF_META_HEADER_SIZE, (const unsigned char *) data,
+                                      element_size, count);
+    }
+    snprintf(profile_key, sizeof(profile_key), "tiff:tag:%u", tag);
+    if (gdImageMetadataSetProfile(metadata, profile_key, encoded, total_size) != GD_META_OK) {
+        gdFree(encoded);
+        return GD_META_ERR_LIMIT;
+    }
+    gdFree(encoded);
+    return GD_META_OK;
+}
+
+static int gd_tiff_metadata_collect(TIFF *tif, gdImageMetadata *metadata)
+{
+    static const uint32_t tags[] = {33550, 33922, 34735, 34736, 34737};
+    size_t i;
+
+    if (tif == NULL || metadata == NULL) return GD_META_ERR_INVALID;
+    for (i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+        uint32_t tag = tags[i];
+        if (tag == 33550 || tag == 33922) {
+            double *data = NULL;
+            const TIFFField *field = TIFFFieldWithTag(tif, tag);
+            if (field != NULL && TIFFGetField(tif, tag, &data)) {
+                int status = gd_tiff_metadata_profile(tag, TIFF_DOUBLE,
+                    (uint32_t) TIFFFieldReadCount(field), data, sizeof(double), metadata);
+                if (status != GD_META_OK) return status;
+            }
+        } else if (tag == 34735) {
+            uint32_t count = 0;
+            uint16_t *data = NULL;
+            if (TIFFGetField(tif, tag, &count, &data)) {
+                int status = gd_tiff_metadata_profile(tag, TIFF_SHORT, count, data, sizeof(uint16_t), metadata);
+                if (status != GD_META_OK) return status;
+            }
+        } else if (tag == 34736) {
+            uint32_t count = 0;
+            double *data = NULL;
+            if (TIFFGetField(tif, tag, &count, &data)) {
+                int status = gd_tiff_metadata_profile(tag, TIFF_DOUBLE, count, data, sizeof(double), metadata);
+                if (status != GD_META_OK) return status;
+            }
+        } else if (tag == 34737) {
+            uint32_t count = 0;
+            char *data = NULL;
+            if (TIFFGetField(tif, tag, &count, &data)) {
+                int status = gd_tiff_metadata_profile(tag, TIFF_ASCII, count, data, sizeof(char), metadata);
+                if (status != GD_META_OK) return status;
+            }
+        }
+    }
+    return GD_META_OK;
+}
+
+static int gd_tiff_metadata_apply(TIFF *tif, const gdImageMetadata *metadata)
+{
+    size_t i;
+    if (tif == NULL || metadata == NULL) return GD_META_OK;
+    for (i = 0; i < gdImageMetadataGetProfileCount(metadata); i++) {
+        const char *key, *tag_text;
+        const unsigned char *encoded;
+        size_t size;
+        uint32_t tag, count, payload_size;
+        TIFFDataType type;
+        unsigned char *payload;
+
+        if (gdImageMetadataGetProfileAt(metadata, i, &key, &encoded, &size) != GD_META_OK ||
+            strncmp(key, "tiff:tag:", 9) != 0 || size < GD_TIFF_META_HEADER_SIZE ||
+            memcmp(encoded, GD_TIFF_META_MAGIC, 4) != 0 || encoded[4] != 1) continue;
+        tag_text = key + 9;
+        tag = (uint32_t) strtoul(tag_text, NULL, 10);
+        type = (TIFFDataType) gd_tiff_metadata_get16(encoded + 6);
+        count = gd_tiff_metadata_get32(encoded + 8);
+        payload_size = gd_tiff_metadata_get32(encoded + 12);
+        if (payload_size != size - GD_TIFF_META_HEADER_SIZE) return GD_META_ERR_PARSE;
+        payload = (unsigned char *) gdMalloc(payload_size ? payload_size : 1);
+        if (payload == NULL) return GD_META_ERR_NOMEM;
+        memcpy(payload, encoded + GD_TIFF_META_HEADER_SIZE, payload_size);
+        if (type == TIFF_DOUBLE || type == TIFF_SHORT) {
+            size_t element_size = type == TIFF_DOUBLE ? sizeof(double) : sizeof(uint16_t);
+            if (gd_tiff_metadata_is_little_endian() == 0) {
+                gd_tiff_metadata_copy_numeric(payload, payload, element_size, count);
+            }
+            if (tag == 33550 || tag == 33922) {
+                if (!TIFFSetField(tif, tag, payload)) { gdFree(payload); return GD_META_ERR_INVALID; }
+            } else if (!TIFFSetField(tif, tag, count, payload)) {
+                gdFree(payload); return GD_META_ERR_INVALID;
+            }
+        } else if (type == TIFF_ASCII) {
+            if (!TIFFSetField(tif, tag, count, payload)) { gdFree(payload); return GD_META_ERR_INVALID; }
+        } else {
+            gdFree(payload);
+            continue;
+        }
+        gdFree(payload);
+    }
+    return GD_META_OK;
+}
 GD_TIFF_COMPILE_ASSERT(photometric_ycbcr, GD_TIFF_PHOTOMETRIC_YCBCR == PHOTOMETRIC_YCBCR);
 GD_TIFF_COMPILE_ASSERT(photometric_cielab, GD_TIFF_PHOTOMETRIC_CIELAB == PHOTOMETRIC_CIELAB);
 GD_TIFF_COMPILE_ASSERT(planar_contig, GD_TIFF_PLANARCONFIG_CONTIG == PLANARCONFIG_CONTIG);
@@ -1301,6 +1517,8 @@ static gdTiffReadPtr TiffReadOpenFromData(uint8_t *data, size_t size)
     tiff_handle *th;
     TIFF *tif;
 
+    gd_tiff_metadata_register_fields();
+
     tiff = (gdTiffReadPtr)gdCalloc(1, sizeof(gdTiffRead));
     if (tiff == NULL) {
         return NULL;
@@ -1463,6 +1681,19 @@ BGD_DECLARE(int) gdTiffReadGetInfo(gdTiffReadPtr tiff, gdTiffInfo *info)
     TiffFillInfo(tiff->tif, info, tiff->pageCount);
     TIFFSetDirectory(tiff->tif, savedDir);
     return 1;
+}
+
+BGD_DECLARE(int) gdTiffReadGetMetadata(gdTiffReadPtr tiff, gdImageMetadata *metadata)
+{
+    tdir_t savedDir;
+    int status;
+
+    if (tiff == NULL || metadata == NULL || tiff->tif == NULL) return 0;
+    savedDir = TIFFCurrentDirectory(tiff->tif);
+    if (!TIFFSetDirectory(tiff->tif, 0)) return 0;
+    status = gd_tiff_metadata_collect(tiff->tif, metadata);
+    TIFFSetDirectory(tiff->tif, savedDir);
+    return status == GD_META_OK;
 }
 
 BGD_DECLARE(int)
@@ -2027,6 +2258,11 @@ static int TiffWriteWritePage(gdTiffWritePtr write, gdImagePtr im)
         TIFFSetField(tif, TIFFTAG_YRESOLUTION, opts->yResolution);
     }
 
+    if (gd_tiff_metadata_apply(tif, opts->metadata) != GD_META_OK) {
+        gd_error("gd-tiff write: unable to apply metadata");
+        return 0;
+    }
+
     if (opts->colorspace == GD_TIFF_BILEVEL) {
         size_t scanline_size = (size_t)((width + 7) / 8);
         if (opts->compression == GD_TIFF_COMPRESSION_CCITT_FAX3 ||
@@ -2161,6 +2397,8 @@ gdTiffWriteOpenCtx(gdIOCtxPtr out, const gdTiffWriteOptions *options)
     gdTiffWritePtr write;
     tiff_handle *th;
     TIFF *tif;
+
+    gd_tiff_metadata_register_fields();
 
     if (out == NULL)
         return NULL;

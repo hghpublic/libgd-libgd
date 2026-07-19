@@ -107,6 +107,7 @@ static int bmp_extract_mask(unsigned int pixel, unsigned int mask);
 static unsigned int bmp_pack_mask(int channel_8bit, unsigned int mask);
 static int bmp_alpha_to_gd(int alpha);
 static int bmp_gd_to_alpha(int gd_alpha);
+static int bmp_get_info_ctx(gdIOCtxPtr infile, gdBmpInfo *result);
 
 #define BMP_DEBUG(s)
 
@@ -128,51 +129,202 @@ static int gdBMPPutInt(gdIOCtx *out, int w)
     return 0;
 }
 
+BGD_DECLARE(void) gdBmpInfoInit(gdBmpInfo *info)
+{
+    if (info) {
+        memset(info, 0, sizeof(*info));
+    }
+}
+
+static int bmp_get_info_ctx(gdIOCtxPtr infile, gdBmpInfo *result)
+{
+    bmp_hdr_t hdr;
+    bmp_info_t info;
+    int palette_entry_size;
+
+    if (infile == NULL || result == NULL) {
+        return 1;
+    }
+    memset(&hdr, 0, sizeof(hdr));
+    memset(&info, 0, sizeof(info));
+    if (bmp_read_header(infile, &hdr) || hdr.magic != 0x4d42 || bmp_read_info(infile, &info) ||
+        bmp_validate_info(&info, &hdr)) {
+        return 1;
+    }
+
+    gdBmpInfoInit(result);
+    result->file_size = hdr.size;
+    result->pixel_offset = hdr.off;
+    result->header_size = info.len;
+    result->header_type = info.len == BMP_OS2_V1 || info.len == BMP_OS2_V2_SHORT || info.len == BMP_OS2_V2 ? 2 : 1;
+    result->width = info.width;
+    result->height = info.height;
+    result->top_down = info.topdown;
+    result->planes = info.numplanes;
+    result->bits_per_pixel = info.depth;
+    result->compression = info.enctype;
+    result->image_size = info.size;
+    result->horizontal_resolution = info.hres;
+    result->vertical_resolution = info.vres;
+    result->colors_used = info.numcolors;
+    result->important_colors = info.mincolors;
+    result->palette_type = info.type;
+    result->red_mask = info.red_mask;
+    result->green_mask = info.green_mask;
+    result->blue_mask = info.blue_mask;
+    result->alpha_mask = info.alpha_mask;
+
+    palette_entry_size = info.type == BMP_PALETTE_3 ? 3 : 4;
+    if (hdr.off >= 14 + info.len) {
+        result->palette_entries = (hdr.off - (14 + info.len)) / palette_entry_size;
+    }
+    return 0;
+}
+
+BGD_DECLARE(int) gdBmpGetInfoCtx(gdIOCtxPtr infile, gdBmpInfo *info)
+{
+    return bmp_get_info_ctx(infile, info) == 0;
+}
+
+BGD_DECLARE(int) gdBmpGetInfo(FILE *infile, gdBmpInfo *info)
+{
+    gdIOCtx *ctx;
+    int result;
+
+    if (infile == NULL) {
+        return 0;
+    }
+    ctx = gdNewFileCtx(infile);
+    if (ctx == NULL) {
+        return 0;
+    }
+    result = gdBmpGetInfoCtx(ctx, info);
+    ctx->gd_free(ctx);
+    return result;
+}
+
+BGD_DECLARE(int) gdBmpGetInfoPtr(int size, const void *data, gdBmpInfo *info)
+{
+    gdIOCtx *ctx;
+    int result;
+
+    if (size < 0 || data == NULL) {
+        return 0;
+    }
+    ctx = gdNewDynamicCtxEx(size, (void *) data, 0);
+    if (ctx == NULL) {
+        return 0;
+    }
+    result = gdBmpGetInfoCtx(ctx, info);
+    ctx->gd_free(ctx);
+    return result;
+}
+
+BGD_DECLARE(void) gdBmpWriteOptionsInit(gdBmpWriteOptions *options)
+{
+    if (options) {
+        options->bits_per_pixel = 0;
+        options->compression = -1;
+        options->flags = GD_BMP_FLAG_NONE;
+        options->metadata = NULL;
+    }
+}
+
+BGD_DECLARE(int) gdImageBmpCtxWithOptions(gdImagePtr im, gdIOCtxPtr out, const gdBmpWriteOptions *options)
+{
+    gdBmpWriteOptions defaults;
+    if (options == NULL) {
+        gdBmpWriteOptionsInit(&defaults);
+        options = &defaults;
+    }
+    return _gdImageBmpCtx(im, out, options->bits_per_pixel, options->compression, options->flags) == 0;
+}
+
+BGD_DECLARE(int) gdImageBmpWithOptions(gdImagePtr im, FILE *outFile, const gdBmpWriteOptions *options)
+{
+    gdIOCtx *out;
+    int result;
+    if (outFile == NULL) {
+        return 0;
+    }
+    out = gdNewFileCtx(outFile);
+    if (out == NULL) {
+        return 0;
+    }
+    result = gdImageBmpCtxWithOptions(im, out, options);
+    out->gd_free(out);
+    return result;
+}
+
+BGD_DECLARE(void *) gdImageBmpPtrWithOptions(gdImagePtr im, int *size, const gdBmpWriteOptions *options)
+{
+    gdIOCtx *out;
+    void *result;
+    out = gdNewDynamicCtx(2048, NULL);
+    if (out == NULL) {
+        return NULL;
+    }
+    result = gdImageBmpCtxWithOptions(im, out, options) ? gdDPExtractData(out, size) : NULL;
+    out->gd_free(out);
+    return result;
+}
+
 BGD_DECLARE(void *) gdImageBmpPtr(gdImagePtr im, int *size, int compression)
 {
-    return gdImageBmpPtrEx(im, size, 0, compression ? -1 : GD_BMP_COMPRESS_NONE, GD_BMP_FLAG_NONE);
+    gdBmpWriteOptions options;
+    gdBmpWriteOptionsInit(&options);
+    options.compression = compression ? -1 : GD_BMP_COMPRESS_NONE;
+    return gdImageBmpPtrWithOptions(im, size, &options);
 }
 
 BGD_DECLARE(void *)
 gdImageBmpPtrEx(gdImagePtr im, int *size, int bpp, int compression, int flags)
 {
-    void *rv;
-    gdIOCtx *out = gdNewDynamicCtx(2048, NULL);
-    if (out == NULL)
-        return NULL;
-    if (!_gdImageBmpCtx(im, out, bpp, compression, flags))
-        rv = gdDPExtractData(out, size);
-    else
-        rv = NULL;
-    out->gd_free(out);
-    return rv;
+    gdBmpWriteOptions options;
+    gdBmpWriteOptionsInit(&options);
+    options.bits_per_pixel = bpp;
+    options.compression = compression;
+    options.flags = flags;
+    return gdImageBmpPtrWithOptions(im, size, &options);
 }
 
 BGD_DECLARE(void) gdImageBmp(gdImagePtr im, FILE *outFile, int compression)
 {
-    gdImageBmpEx(im, outFile, 0, compression ? -1 : GD_BMP_COMPRESS_NONE, GD_BMP_FLAG_NONE);
+    gdBmpWriteOptions options;
+    gdBmpWriteOptionsInit(&options);
+    options.compression = compression ? -1 : GD_BMP_COMPRESS_NONE;
+    gdImageBmpWithOptions(im, outFile, &options);
 }
 
 BGD_DECLARE(void)
 gdImageBmpEx(gdImagePtr im, FILE *outFile, int bpp, int compression, int flags)
 {
-    gdIOCtx *out = gdNewFileCtx(outFile);
-    if (out == NULL)
-        return;
-    gdImageBmpCtxEx(im, out, bpp, compression, flags);
-    out->gd_free(out);
+    gdBmpWriteOptions options;
+    gdBmpWriteOptionsInit(&options);
+    options.bits_per_pixel = bpp;
+    options.compression = compression;
+    options.flags = flags;
+    gdImageBmpWithOptions(im, outFile, &options);
 }
 
 BGD_DECLARE(void)
 gdImageBmpCtx(gdImagePtr im, gdIOCtxPtr out, int compression)
 {
-    gdImageBmpCtxEx(im, out, 0, compression ? -1 : GD_BMP_COMPRESS_NONE, GD_BMP_FLAG_NONE);
+    gdBmpWriteOptions options;
+    gdBmpWriteOptionsInit(&options);
+    options.compression = compression ? -1 : GD_BMP_COMPRESS_NONE;
+    gdImageBmpCtxWithOptions(im, out, &options);
 }
 
 BGD_DECLARE(void)
 gdImageBmpCtxEx(gdImagePtr im, gdIOCtxPtr out, int bpp, int compression, int flags)
 {
-    _gdImageBmpCtx(im, out, bpp, compression, flags);
+    gdBmpWriteOptions options;
+    gdBmpWriteOptionsInit(&options);
+    options.bits_per_pixel = bpp;
+    options.compression = compression;
+    options.flags = flags;
+    gdImageBmpCtxWithOptions(im, out, &options);
 }
 
 static int _gdImageBmpCtx(gdImagePtr im, gdIOCtxPtr out, int bpp, int compression, int flags)

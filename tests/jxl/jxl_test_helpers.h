@@ -57,12 +57,12 @@ static inline gdImagePtr jxlTestCreateSolid(int r, int g, int b, int a) {
 static inline void *jxlTestEncodeAnimationWithLoop(gdImagePtr first, int first_delay,
 												   gdImagePtr second, int second_delay,
 												   int lossless, int loop_count, int *size) {
-	gdJxlWriteOptions options;
+	gdJxlAnimWriteOptions options;
 	gdJxlWritePtr writer;
 	void *data = NULL;
 
 	*size = 0;
-	gdJxlWriteOptionsInit(&options);
+	gdJxlAnimWriteOptionsInit(&options);
 	options.lossless = lossless;
 	options.distance = lossless ? 0.0f : 1.0f;
 	options.loopCount = loop_count;

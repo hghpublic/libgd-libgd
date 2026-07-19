@@ -61,6 +61,51 @@ static int check_no_subsampling(void *jpeg, int size)
 	return result;
 }
 
+static void test_info_apis(const void *jpeg, int size, int progressive)
+{
+	FILE *fp;
+	gdIOCtxPtr ctx;
+	gdJpegInfo info;
+	unsigned char invalid[] = {0, 1, 2, 3};
+
+	gdJpegInfoInit(&info);
+	gdTestAssert(info.color_space == GD_JPEG_COLOR_SPACE_UNKNOWN);
+	gdTestAssert(info.density_unit == GD_JPEG_DENSITY_UNIT_NONE);
+	gdTestAssert(info.x_density == -1 && info.y_density == -1);
+	gdJpegInfoInit(NULL);
+
+	gdTestAssert(gdJpegGetInfoPtr(size, jpeg, &info) == 0);
+	gdTestAssert(info.width == 16 && info.height == 8);
+	gdTestAssert(info.bits_per_sample == 8);
+	gdTestAssert(info.components == 3);
+	gdTestAssert(info.color_space == GD_JPEG_COLOR_SPACE_RGB ||
+				 info.color_space == GD_JPEG_COLOR_SPACE_YCBCR);
+	gdTestAssert(info.progressive == progressive);
+
+	ctx = gdNewDynamicCtxEx(size, (void *)jpeg, 0);
+	gdTestAssert(ctx != NULL);
+	if (ctx != NULL) {
+		gdTestAssert(gdJpegGetInfoCtx(ctx, &info) == 0);
+		ctx->gd_free(ctx);
+	}
+
+	fp = tmpfile();
+	gdTestAssert(fp != NULL);
+	if (fp != NULL) {
+		gdTestAssert(fwrite(jpeg, 1, (size_t)size, fp) == (size_t)size);
+		rewind(fp);
+		gdTestAssert(gdJpegGetInfo(fp, &info) == 0);
+		fclose(fp);
+	}
+
+	gdTestAssert(gdJpegGetInfo(NULL, &info) == 1);
+	gdTestAssert(gdJpegGetInfoCtx(NULL, &info) == 1);
+	gdTestAssert(gdJpegGetInfoPtr(0, jpeg, &info) == 1);
+	gdTestAssert(gdJpegGetInfoPtr(size, NULL, &info) == 1);
+	gdTestAssert(gdJpegGetInfoPtr(size, jpeg, NULL) == 1);
+	gdTestAssert(gdJpegGetInfoPtr((int)sizeof(invalid), invalid, &info) == 1);
+}
+
 int main(void)
 {
 	gdImagePtr im;
@@ -109,6 +154,7 @@ int main(void)
 		gdTestAssert(info.width == 16);
 		gdTestAssert(info.height == 8);
 		gdTestAssert(info.progressive == 1);
+		test_info_apis(advanced, advanced_size, 1);
 		gdFree(advanced);
 	}
 

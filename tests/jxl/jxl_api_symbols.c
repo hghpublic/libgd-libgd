@@ -3,7 +3,7 @@
 
 int main(void) {
 	gdJxlReadOptions read_options;
-	gdJxlWriteOptions write_options;
+	gdJxlAnimWriteOptions write_options;
 	gdJxlReadPtr (*read_open)(FILE *, const gdJxlReadOptions *);
 	gdJxlReadPtr (*read_open_ctx)(gdIOCtxPtr, const gdJxlReadOptions *);
 	gdJxlReadPtr (*read_open_ptr)(int, void *, const gdJxlReadOptions *);
@@ -11,19 +11,17 @@ int main(void) {
 	int (*read_next_image)(gdJxlReadPtr, int *, gdImagePtr *);
 	int (*read_next_frame)(gdJxlReadPtr, gdJxlFrameInfo *, gdImagePtr *);
 	void (*read_close)(gdJxlReadPtr);
-	gdJxlWritePtr (*write_open)(FILE *, const gdJxlWriteOptions *);
-	gdJxlWritePtr (*write_open_ctx)(gdIOCtxPtr, const gdJxlWriteOptions *);
-	gdJxlWritePtr (*write_open_ptr)(const gdJxlWriteOptions *);
+	gdJxlWritePtr (*write_open)(FILE *, const gdJxlAnimWriteOptions *);
+	gdJxlWritePtr (*write_open_ctx)(gdIOCtxPtr, const gdJxlAnimWriteOptions *);
+	gdJxlWritePtr (*write_open_ptr)(const gdJxlAnimWriteOptions *);
 	int (*write_add_image)(gdJxlWritePtr, gdImagePtr, int);
 	void (*write_close)(gdJxlWritePtr);
 	void *(*write_ptr_finish)(gdJxlWritePtr, int *);
 
 	gdJxlReadOptionsInit(&read_options);
-	gdJxlWriteOptionsInit(&write_options);
+	gdJxlAnimWriteOptionsInit(&write_options);
 
 	gdTestAssert(read_options.coalesced == 1);
-	gdTestAssert(write_options.canvasWidth == 0);
-	gdTestAssert(write_options.canvasHeight == 0);
 	gdTestAssert(write_options.distance == 1.0f);
 	gdTestAssert(write_options.effort == 7);
 	gdTestAssert(write_options.loopCount == 0);

@@ -492,6 +492,10 @@ void *qoi_decode(const void *data, int size, qoi_desc *desc, int channels)
 
     bytes = (const unsigned char *)data;
 
+    if (memcmp(bytes + size - sizeof(qoi_padding), qoi_padding, sizeof(qoi_padding)) != 0) {
+        return NULL;
+    }
+
     header_magic = qoi_read_32(bytes, &p);
     desc->width = qoi_read_32(bytes, &p);
     desc->height = qoi_read_32(bytes, &p);

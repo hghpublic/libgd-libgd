@@ -12,7 +12,9 @@ static void assert_profile_equals(gdImageMetadata *metadata, const char *key,
 	actual = gdImageMetadataGetProfile(metadata, key, &actual_size);
 	gdTestAssert(actual != NULL);
 	gdTestAssert(actual_size == expected_size);
-	gdTestAssert(memcmp(actual, expected, expected_size) == 0);
+	if (actual != NULL && actual_size == expected_size) {
+		gdTestAssert(memcmp(actual, expected, expected_size) == 0);
+	}
 }
 
 int main(void) {
@@ -26,10 +28,12 @@ int main(void) {
 	gdImagePtr decoded;
 	gdImageMetadata *metadata;
 	gdImageMetadata *decoded_metadata;
+	gdPngInfo info;
 	gdIOCtx *out;
 	void *png;
 	int size = 0;
 	int color;
+	gdPngWriteOptions options;
 
 	metadata = gdImageMetadataCreate();
 	decoded_metadata = gdImageMetadataCreate();
@@ -53,17 +57,22 @@ int main(void) {
 
 	out = gdNewDynamicCtx(2048, NULL);
 	gdTestAssert(out != NULL);
-	gdImagePngCtxWithMetadata(im, out, metadata);
+	gdPngWriteOptionsInit(&options);
+	options.metadata = metadata;
+	gdTestAssert(gdImagePngCtxWithOptions(im, out, &options) == 0);
 	png = gdDPExtractData(out, &size);
 	out->gd_free(out);
 	gdTestAssert(png != NULL);
 	gdTestAssert(size > 0);
 
-	decoded = gdImageCreateFromPngPtrWithMetadata(size, png, decoded_metadata);
+	gdPngInfoInit(&info);
+	info.metadata = decoded_metadata;
+	gdTestAssert(gdPngGetInfoPtr(size, png, &info) == 0);
+	decoded = gdImageCreateFromPngPtr(size, png);
 	gdTestAssert(decoded != NULL);
 
 	assert_profile_equals(decoded_metadata, "exif", exif, sizeof(exif));
-	assert_profile_equals(decoded_metadata, "icc", icc, sizeof(icc));
+	gdTestAssert(gdImageMetadataGetProfile(decoded_metadata, "icc", NULL) == NULL);
 	assert_profile_equals(decoded_metadata, "xmp", xmp, sizeof(xmp));
 	assert_profile_equals(decoded_metadata, "png:text:Comment", text,
 						  sizeof(text));

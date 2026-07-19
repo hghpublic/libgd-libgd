@@ -66,7 +66,7 @@ static void do_test(void) {
 				 {"img.webp", 10, 1, 0},
 				 {"img.tiff", 0, 1, 0},
 
-				 {NULL, 0}};
+				 {NULL, 0, 0, 0}};
 
 	for (n = 0; names[n].nm; n++) {
 		gdImagePtr orig, copy;

@@ -4,9 +4,9 @@
 int main(void)
 {
 	gdWebpReadOptions readOptions;
-	gdWebpWriteOptions writeOptions;
+	gdWebpAnimWriteOptions writeOptions;
 	void (BGD_STDCALL *readOptionsInit)(gdWebpReadOptions *) = gdWebpReadOptionsInit;
-	void (BGD_STDCALL *writeOptionsInit)(gdWebpWriteOptions *) = gdWebpWriteOptionsInit;
+	void (BGD_STDCALL *writeOptionsInit)(gdWebpAnimWriteOptions *) = gdWebpAnimWriteOptionsInit;
 	int (BGD_STDCALL *isAnimated)(FILE *) = gdWebpIsAnimated;
 	int (BGD_STDCALL *isAnimatedCtx)(gdIOCtxPtr) = gdWebpIsAnimatedCtx;
 	int (BGD_STDCALL *isAnimatedPtr)(int, void *) = gdWebpIsAnimatedPtr;
@@ -22,11 +22,11 @@ int main(void)
 	int (BGD_STDCALL *readNextImage)(gdWebpReadPtr, gdWebpFrameInfo *, gdImagePtr *) =
 		gdWebpReadNextImage;
 	void (BGD_STDCALL *readClose)(gdWebpReadPtr) = gdWebpReadClose;
-	gdWebpWritePtr (BGD_STDCALL *writeOpen)(FILE *, const gdWebpWriteOptions *) =
+	gdWebpWritePtr (BGD_STDCALL *writeOpen)(FILE *, const gdWebpAnimWriteOptions *) =
 		gdWebpWriteOpen;
-	gdWebpWritePtr (BGD_STDCALL *writeOpenCtx)(gdIOCtxPtr, const gdWebpWriteOptions *) =
+	gdWebpWritePtr (BGD_STDCALL *writeOpenCtx)(gdIOCtxPtr, const gdWebpAnimWriteOptions *) =
 		gdWebpWriteOpenCtx;
-	gdWebpWritePtr (BGD_STDCALL *writeOpenPtr)(const gdWebpWriteOptions *) =
+	gdWebpWritePtr (BGD_STDCALL *writeOpenPtr)(const gdWebpAnimWriteOptions *) =
 		gdWebpWriteOpenPtr;
 	int (BGD_STDCALL *writeAddImage)(gdWebpWritePtr, gdImagePtr, int) =
 		gdWebpWriteAddImage;
@@ -34,7 +34,7 @@ int main(void)
 	void *(BGD_STDCALL *writePtrFinish)(gdWebpWritePtr, int *) = gdWebpWritePtrFinish;
 
 	gdWebpReadOptionsInit(&readOptions);
-	gdWebpWriteOptionsInit(&writeOptions);
+	gdWebpAnimWriteOptionsInit(&writeOptions);
 
 	gdTestAssert(readOptions.coalesced == 1);
 	gdTestAssert(writeOptions.quality == -1);

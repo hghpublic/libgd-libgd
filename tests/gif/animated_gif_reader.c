@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static char *fixture_path(const char *file) {
 	return gdTestFilePathX("gif", "animated_gif_reader", file, NULL);
@@ -54,6 +55,88 @@ static int color_is(gdImagePtr im, int x, int y, int r, int g, int b) {
 
 	return gdTrueColorGetRed(c) == r && gdTrueColorGetGreen(c) == g &&
 		   gdTrueColorGetBlue(c) == b;
+}
+
+static void assert_gif_info(const gdGifInfo *info, int loop_count, int present) {
+	gdTestAssertMsg(strcmp(info->version, "89a") == 0,
+					"unexpected GIF version: %s", info->version);
+	gdTestAssertMsg(info->width == 8 && info->height == 8,
+					"unexpected GIF dimensions: %dx%d", info->width, info->height);
+	gdTestAssertMsg(info->backgroundIndex == 0,
+					"unexpected GIF background index: %d", info->backgroundIndex);
+	gdTestAssertMsg(info->globalColorTable != 0,
+					"expected a global GIF color table");
+	gdTestAssertMsg(info->colorResolution == 2,
+					"unexpected GIF color resolution: %d", info->colorResolution);
+	gdTestAssertMsg(info->pixelAspectRatio == 1.0,
+					"unexpected GIF pixel aspect ratio: %f", info->pixelAspectRatio);
+	gdTestAssertMsg(info->loopCount == loop_count,
+					"unexpected GIF loop count: %d", info->loopCount);
+	gdTestAssertMsg(info->loopCountPresent == present,
+					"unexpected GIF loop-count presence: %d", info->loopCountPresent);
+}
+
+static void test_info_apis(void) {
+	FILE *fp;
+	gdIOCtxPtr ctx;
+	gdGifInfo info;
+	void *data;
+	int size;
+	long position;
+
+	data = fixture_data("anim_3frame_rgb.gif", &size);
+	gdTestAssert(data != NULL);
+	if (data == NULL) {
+		return;
+	}
+
+	gdTestAssert(gdGifGetInfoPtr(size, data, &info) == 1);
+	assert_gif_info(&info, 0, 1);
+
+	ctx = gdNewDynamicCtxEx(size, data, 0);
+	gdTestAssert(ctx != NULL);
+	if (ctx != NULL) {
+		position = ctx->tell(ctx);
+		gdTestAssert(gdGifGetInfoCtx(ctx, &info) == 1);
+		gdTestAssertMsg(ctx->tell(ctx) == position,
+						"GIF Info context did not restore its position");
+		ctx->gd_free(ctx);
+	}
+
+	fp = fixture_open("anim_3frame_rgb.gif");
+	gdTestAssert(fp != NULL);
+	if (fp != NULL) {
+		position = ftell(fp);
+		gdTestAssert(gdGifGetInfo(fp, &info) == 1);
+		gdTestAssertMsg(ftell(fp) == position,
+						"GIF Info FILE API did not restore its position");
+		fclose(fp);
+	}
+
+	gdTestAssert(gdGifGetInfo(NULL, &info) == 0);
+	gdTestAssert(gdGifGetInfoCtx(NULL, &info) == 0);
+	gdTestAssert(gdGifGetInfoPtr(0, data, &info) == 0);
+	gdTestAssert(gdGifGetInfoPtr(size, NULL, &info) == 0);
+	gdTestAssert(gdGifReadGetInfo(NULL, &info) == 0);
+	gdTestAssert(gdGifGetInfoPtr(size, data, NULL) == 0);
+
+	free(data);
+
+	data = fixture_data("static_4x4_red.gif", &size);
+	gdTestAssert(data != NULL);
+	if (data != NULL) {
+		gdTestAssert(gdGifGetInfoPtr(size, data, &info) == 1);
+		gdTestAssertMsg(info.loopCount == 1 && info.loopCountPresent == 0,
+						"static GIF loop defaults are incorrect");
+		free(data);
+	}
+
+	data = fixture_data("bad_magic.gif", &size);
+	gdTestAssert(data != NULL);
+	if (data != NULL) {
+		gdTestAssert(gdGifGetInfoPtr(size, data, &info) == 0);
+		free(data);
+	}
 }
 
 static void test_probe(void) {
@@ -328,6 +411,7 @@ static void test_legacy_first_frame(void) {
 }
 
 int main() {
+	test_info_apis();
 	test_probe();
 	test_raw_iterator();
 	test_local_color_table();

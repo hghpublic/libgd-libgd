@@ -149,15 +149,13 @@ int main() {
 	data = gdImageQoiPtrEx(src, &size, GD_QOI_LINEAR);
 	gdTestAssertMsg(data != NULL, "gdImageQoiPtrEx returned NULL\n");
 	if (data != NULL) {
-		dst = gdImageCreateFromQoiPtrWithMetadata(size, data, NULL);
-		gdTestAssertMsg(dst != NULL,
-						"gdImageCreateFromQoiPtrWithMetadata returned NULL\n");
+		dst = gdImageCreateFromQoiPtr(size, data);
+		gdTestAssertMsg(dst != NULL, "gdImageCreateFromQoiPtr returned NULL\n");
 		if (dst != NULL) {
 			gdAssertImageEquals(src, dst);
 			gdImageDestroy(dst);
 			dst = NULL;
 		}
-		gdImageMetadataInjectQoi(&data, &size, NULL);
 		gdFree(data);
 		data = NULL;
 	}
@@ -177,7 +175,7 @@ int main() {
 		}
 	}
 
-	data = gdImageQoiPtrWithMetadata(src, &size, NULL);
+	data = gdImageQoiPtrWithOptions(src, &size, NULL);
 	source.data = (const unsigned char *)data;
 	source.size = size;
 	source.pos = 0;

@@ -77,6 +77,7 @@ int main(void)
 	gdImagePtr decoded;
 	gdImageMetadata *metadata;
 	gdIOCtx *in_ctx;
+	gdPngInfo info;
 	void *png;
 	void *roundtrip;
 	int size = 0;
@@ -113,7 +114,11 @@ int main(void)
 
 	in_ctx = gdNewDynamicCtxEx((int)source_data.size(), &source_data[0], 0);
 	gdTestAssert(in_ctx != NULL);
-	decoded = gdImageCreateFromPngCtxWithMetadata(in_ctx, metadata);
+	gdPngInfoInit(&info);
+	info.metadata = metadata;
+	gdTestAssert(gdPngGetInfoCtx(in_ctx, &info) == 0);
+	in_ctx->seek(in_ctx, 0);
+	decoded = gdImageCreateFromPngCtx(in_ctx);
 	in_ctx->gd_free(in_ctx);
 	gdTestAssert(decoded != NULL);
 
@@ -121,7 +126,10 @@ int main(void)
 	gdTestAssert(exif != NULL);
 	gdTestAssert(exif_size > 8);
 
-	roundtrip = gdImagePngPtrWithMetadata(decoded, &roundtrip_size, metadata);
+	gdPngWriteOptions write_options;
+	gdPngWriteOptionsInit(&write_options);
+	write_options.metadata = metadata;
+	roundtrip = gdImagePngPtrWithOptions(decoded, &roundtrip_size, &write_options);
 	gdTestAssert(roundtrip != NULL);
 	gdTestAssert(roundtrip_size > 0);
 	gdTestAssert(write_file(roundtrip_path, roundtrip, roundtrip_size));

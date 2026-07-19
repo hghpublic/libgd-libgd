@@ -11,6 +11,7 @@
 #include "gd.h"
 #include "gd_errors.h"
 #include "gdhelpers.h"
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -128,10 +129,14 @@ typedef struct gdGifReadStruct {
     int frameIndex;
     int screenWidth;
     int screenHeight;
+    char version[4];
     int backgroundIndex;
     int haveGlobalColormap;
     int globalColorCount;
+    int colorResolution;
+    double pixelAspectRatio;
     int loopCount;
+    int loopCountPresent;
     unsigned char globalColorMap[3][MAXCOLORMAPSIZE];
     unsigned char localColorMap[3][MAXCOLORMAPSIZE];
     GifGraphicControl gce;
@@ -155,6 +160,7 @@ static gdImagePtr GifCloneImage(gdImagePtr src);
 static void GifApplyPreviousDisposal(gdGifRead *gif);
 static int GifCompositeFrame(gdGifRead *gif, gdImagePtr rawFrame);
 static int GifProbeIsAnimated(gdIOCtxPtr in);
+static int GifGetSeekPosition(gdIOCtxPtr in, int *position);
 
 static void GifResetGraphicControl(GifGraphicControl *gce)
 {
@@ -176,6 +182,23 @@ static void GifTrimColorTable(gdImagePtr im)
     }
 }
 
+static int GifGetSeekPosition(gdIOCtxPtr in, int *position)
+{
+    long current_position;
+
+    if (in == NULL || position == NULL || in->tell == NULL || in->seek == NULL) {
+        return 0;
+    }
+
+    current_position = gdTell(in);
+    if (current_position < 0 || current_position > INT_MAX) {
+        return 0;
+    }
+
+    *position = (int) current_position;
+    return 1;
+}
+
 static int GifReadHeader(gdGifRead *gif)
 {
     unsigned char buf[16];
@@ -185,6 +208,7 @@ static int GifReadHeader(gdGifRead *gif)
     memset(gif->localColorMap, 0, 3 * MAXCOLORMAPSIZE);
     GifResetGraphicControl(&gif->gce);
     gif->loopCount = 1;
+    gif->loopCountPresent = 0;
 
     if (!ReadOK(gif->in, buf, 6)) {
         return 0;
@@ -195,6 +219,8 @@ static int GifReadHeader(gdGifRead *gif)
     if (memcmp((char *)buf + 3, "87a", 3) != 0 && memcmp((char *)buf + 3, "89a", 3) != 0) {
         return 0;
     }
+    memcpy(gif->version, buf + 3, 3);
+    gif->version[3] = '\0';
     if (!ReadOK(gif->in, buf, 7)) {
         return 0;
     }
@@ -206,6 +232,8 @@ static int GifReadHeader(gdGifRead *gif)
     }
 
     gif->backgroundIndex = buf[5];
+    gif->colorResolution = ((buf[4] >> 4) & 0x07) + 1;
+    gif->pixelAspectRatio = buf[6] == 0 ? 1.0 : ((double) buf[6] + 15.0) / 64.0;
     bitPixel = 2 << (buf[4] & 0x07);
     gif->globalColorCount = bitPixel;
     gif->haveGlobalColormap = BitSet(buf[4], LOCALCOLORMAP);
@@ -250,6 +278,7 @@ static int GifReadApplicationExtension(gdGifRead *gif, int *ZeroDataBlockP)
         }
         if (count >= 3 && buf[0] == 1) {
             gif->loopCount = LM_to_uint(buf[1], buf[2]);
+            gif->loopCountPresent = 1;
         }
         while (count > 0) {
             count = GetDataBlock(gif->in, buf, ZeroDataBlockP);
@@ -560,8 +589,7 @@ BGD_DECLARE(int) gdGifIsAnimated(FILE *fdFile)
     if (fd == NULL) {
         return -1;
     }
-    pos = (int)gdTell(fd);
-    if (pos < 0) {
+    if (!GifGetSeekPosition(fd, &pos)) {
         fd->gd_free(fd);
         return -1;
     }
@@ -577,11 +605,7 @@ BGD_DECLARE(int) gdGifIsAnimatedCtx(gdIOCtxPtr in)
 {
     int result, pos;
 
-    if (in == NULL || in->tell == NULL || in->seek == NULL) {
-        return -1;
-    }
-    pos = (int)gdTell(in);
-    if (pos < 0) {
+    if (!GifGetSeekPosition(in, &pos)) {
         return -1;
     }
     result = GifProbeIsAnimated(in);
@@ -666,7 +690,7 @@ BGD_DECLARE(gdGifReadPtr) gdGifReadOpenCtx(gdIOCtxPtr in)
     gif->ownsCtx = 0;
     GifResetGraphicControl(&gif->gce);
     if (!GifReadHeader(gif) || !GifPrimeFirstImage(gif)) {
-        gdFree(gif);
+        gdGifReadClose(gif);
         return NULL;
     }
 
@@ -695,12 +719,75 @@ BGD_DECLARE(int) gdGifReadGetInfo(gdGifReadPtr gif, gdGifInfo *info)
     if (gif == NULL || info == NULL) {
         return 0;
     }
+    memcpy(info->version, gif->version, sizeof(info->version));
     info->width = gif->screenWidth;
     info->height = gif->screenHeight;
     info->backgroundIndex = gif->backgroundIndex;
     info->globalColorTable = gif->haveGlobalColormap;
+    info->colorResolution = gif->colorResolution;
+    info->pixelAspectRatio = gif->pixelAspectRatio;
     info->loopCount = gif->loopCount;
+    info->loopCountPresent = gif->loopCountPresent;
     return 1;
+}
+
+BGD_DECLARE(int) gdGifGetInfoCtx(gdIOCtxPtr input, gdGifInfo *info)
+{
+    gdGifReadPtr gif;
+    int position;
+    int result;
+
+    if (info == NULL || !GifGetSeekPosition(input, &position)) {
+        return 0;
+    }
+    gif = gdGifReadOpenCtx(input);
+    result = gif != NULL && gdGifReadGetInfo(gif, info);
+    if (gif != NULL) {
+        gdGifReadClose(gif);
+    }
+    if (!gdSeek(input, position)) {
+        return 0;
+    }
+    return result;
+}
+
+BGD_DECLARE(int) gdGifGetInfo(FILE *file, gdGifInfo *info)
+{
+    gdIOCtxPtr input;
+    int result;
+
+    if (file == NULL || info == NULL) {
+        return 0;
+    }
+    input = gdNewFileCtx(file);
+    if (input == NULL) {
+        return 0;
+    }
+    result = gdGifGetInfoCtx(input, info);
+    input->gd_free(input);
+    return result;
+}
+
+BGD_DECLARE(int) gdGifGetInfoPtr(int size, const void *data, gdGifInfo *info)
+{
+    gdIOCtxPtr input;
+    gdGifReadPtr gif;
+    int result;
+
+    if (size <= 0 || data == NULL || info == NULL) {
+        return 0;
+    }
+    input = gdNewDynamicCtxEx(size, (void *) data, 0);
+    if (input == NULL) {
+        return 0;
+    }
+    gif = gdGifReadOpenCtx(input);
+    result = gif != NULL && gdGifReadGetInfo(gif, info);
+    if (gif != NULL) {
+        gdGifReadClose(gif);
+    }
+    input->gd_free(input);
+    return result;
 }
 
 BGD_DECLARE(int)

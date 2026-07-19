@@ -1,5 +1,10 @@
 include_directories (BEFORE "${GD_SOURCE_DIR}/src" "${CMAKE_BINARY_DIR}")
 
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+	pkg_check_modules(LIBEXIF QUIET libexif)
+endif()
+
 SET(TESTS_FILES
 	gif
 	scale_bench
@@ -69,6 +74,19 @@ FOREACH(test_name ${TESTS_FILES})
 	add_executable(${test_name} "${test_name}.c")
 	target_link_libraries (${test_name} ${GD_LINK_LIB})
 ENDFOREACH(test_name)
+
+if(JPEG_FOUND AND LIBEXIF_FOUND)
+	add_executable(metadata_libexif metadata_libexif.c)
+	target_include_directories(metadata_libexif PRIVATE ${LIBEXIF_INCLUDE_DIRS})
+	target_compile_options(metadata_libexif PRIVATE ${LIBEXIF_CFLAGS_OTHER})
+	target_link_directories(metadata_libexif PRIVATE ${LIBEXIF_LIBRARY_DIRS})
+	target_link_libraries(metadata_libexif ${GD_LINK_LIB} ${LIBEXIF_LIBRARIES})
+	if(PNG_FOUND)
+		target_compile_definitions(metadata_libexif PRIVATE HAVE_PNG)
+	endif()
+else()
+	message(STATUS "libexif or JPEG not found; libexif metadata example will be skipped")
+endif()
 
 # Add libraries *after* we've called add_executable on all the tests.
 

@@ -142,82 +142,78 @@ static void gdUhdrInitCompressedImage(uhdr_compressed_image_t *image, void *data
     image->range = UHDR_CR_FULL_RANGE;
 }
 
-static int gdUhdrCopyMetadataProfile(gdImageMetadata **dst, const gdImageMetadata *src,
-                                     const char *key, gdUhdrErrorPtr err)
+static void gdUhdrGetIccPayload(const uhdr_mem_block_t *block, const unsigned char **data,
+                                size_t *size)
 {
-    const unsigned char *profile;
-    size_t profile_size;
-    int status;
+    static const unsigned char marker[] = "ICC_PROFILE\0";
 
-    profile = gdImageMetadataGetProfile(src, key, &profile_size);
-    if (!profile) {
-        return GD_UHDR_SUCCESS;
+    *data = block && block->data ? (const unsigned char *)block->data : NULL;
+    *size = block && block->data ? block->data_sz : 0;
+    if (*data && *size >= sizeof(marker) + 2 && memcmp(*data, marker, sizeof(marker)) == 0) {
+        *data += sizeof(marker) + 2;
+        *size -= sizeof(marker) + 2;
     }
-
-    if (!*dst) {
-        *dst = gdImageMetadataCreate();
-        if (!*dst) {
-            gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0, "Out of memory copying JPEG metadata");
-            return GD_UHDR_E_ENCODE;
-        }
-    }
-
-    status = gdImageMetadataSetProfile(*dst, key, profile, profile_size);
-    if (status != GD_META_OK) {
-        gdUhdrSetError(err, GD_UHDR_E_ENCODE, status, "Failed to copy JPEG metadata");
-        return GD_UHDR_E_ENCODE;
-    }
-
-    return GD_UHDR_SUCCESS;
 }
 
-static int gdUhdrCreateJpegMetadataFromBlock(uhdr_mem_block_t *block, int copy_exif, int copy_icc,
-                                             gdImageMetadata **out, gdUhdrErrorPtr err)
+static void *gdUhdrAddIccProfile(const void *jpeg_data, size_t jpeg_size,
+                                 const unsigned char *icc, size_t icc_size,
+                                 size_t *out_size, gdUhdrErrorPtr err)
 {
-    gdImageMetadata *src_metadata;
-    gdImagePtr decoded;
-    int status;
+    static const unsigned char signature[] = "ICC_PROFILE\0";
+    const size_t max_chunk = 65533 - sizeof(signature) - 2;
+    size_t count;
+    size_t marker_size;
+    size_t total_size;
+    size_t offset = 2;
+    size_t icc_offset = 0;
+    unsigned int index;
+    unsigned char *output;
 
-    *out = NULL;
-    if (!block || !block->data || block->data_sz == 0) {
-        return GD_UHDR_SUCCESS;
+    if (!jpeg_data || jpeg_size < 2 || ((const unsigned char *)jpeg_data)[0] != 0xff ||
+        ((const unsigned char *)jpeg_data)[1] != 0xd8 || !icc || icc_size == 0) {
+        gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0, "Invalid JPEG or ICC data for UltraHDR");
+        return NULL;
     }
-    if (block->data_sz > (size_t)INT_MAX) {
-        gdUhdrSetError(err, GD_UHDR_E_INVALID, 0, "JPEG metadata block is too large");
-        return GD_UHDR_E_INVALID;
+    count = (icc_size + max_chunk - 1) / max_chunk;
+    if (count > 255 || icc_size > (size_t)-1 - jpeg_size) {
+        gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0, "UltraHDR ICC profile is too large");
+        return NULL;
     }
+    marker_size = 2 + 2 + sizeof(signature) + 2;
+    if (icc_size > (size_t)-1 - jpeg_size - count * marker_size) {
+        gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0, "UltraHDR ICC profile size overflow");
+        return NULL;
+    }
+    total_size = jpeg_size + count * marker_size + icc_size;
+    output = (unsigned char *)gdMalloc(total_size);
+    if (!output) {
+        gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0, "Out of memory writing UltraHDR ICC");
+        return NULL;
+    }
+    memcpy(output, jpeg_data, 2);
+    for (index = 1; index <= count; index++) {
+        size_t chunk = icc_size - icc_offset;
+        unsigned int segment_size;
 
-    src_metadata = gdImageMetadataCreate();
-    if (!src_metadata) {
-        gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0, "Out of memory reading JPEG metadata");
-        return GD_UHDR_E_ENCODE;
-    }
-
-    decoded = gdImageCreateFromJpegPtrWithMetadata((int)block->data_sz, block->data, src_metadata);
-    if (!decoded) {
-        gdImageMetadataFree(src_metadata);
-        gdUhdrSetError(err, GD_UHDR_E_DECODE, 0, "Failed to read JPEG metadata");
-        return GD_UHDR_E_DECODE;
-    }
-    gdImageDestroy(decoded);
-
-    if (copy_exif) {
-        status = gdUhdrCopyMetadataProfile(out, src_metadata, "exif", err);
-        if (status != GD_UHDR_SUCCESS) {
-            gdImageMetadataFree(src_metadata);
-            return status;
+        if (chunk > max_chunk) {
+            chunk = max_chunk;
         }
+        segment_size = (unsigned int)(sizeof(signature) + 2 + chunk + 2);
+        output[offset++] = 0xff;
+        output[offset++] = 0xe2;
+        output[offset++] = (unsigned char)(segment_size >> 8);
+        output[offset++] = (unsigned char)segment_size;
+        memcpy(output + offset, signature, sizeof(signature));
+        offset += sizeof(signature);
+        output[offset++] = (unsigned char)index;
+        output[offset++] = (unsigned char)count;
+        memcpy(output + offset, icc + icc_offset, chunk);
+        offset += chunk;
+        icc_offset += chunk;
     }
-    if (copy_icc) {
-        status = gdUhdrCopyMetadataProfile(out, src_metadata, "icc", err);
-        if (status != GD_UHDR_SUCCESS) {
-            gdImageMetadataFree(src_metadata);
-            return status;
-        }
-    }
-
-    gdImageMetadataFree(src_metadata);
-    return GD_UHDR_SUCCESS;
+    memcpy(output + offset, (const unsigned char *)jpeg_data + 2, jpeg_size - 2);
+    *out_size = total_size;
+    return output;
 }
 
 static gdImagePtr gdUhdrCreateGdImageFromJpegBlock(uhdr_mem_block_t *block, const char *label,
@@ -419,17 +415,46 @@ static int gdUhdrApplyGdOps(gdImagePtr *base_image, gdImagePtr *gainmap_image, g
     return GD_UHDR_SUCCESS;
 }
 
-static int gdUhdrEncodeJpegComponent(gdImagePtr image, int quality, const gdImageMetadata *metadata,
+static int gdUhdrEncodeJpegComponent(gdImagePtr image, int quality,
+                                     const uhdr_mem_block_t *icc_block,
                                      int no_subsampling, void **out_data, int *out_size,
                                      gdUhdrErrorPtr err)
 {
     void *jpeg;
+    void *with_icc;
     int jpeg_size = 0;
+    size_t output_size = 0;
+    gdJpegWriteOptions options;
+    const unsigned char *icc_data;
+    size_t icc_size;
 
-    if (no_subsampling) {
-        jpeg = gdImageJpegPtrWithMetadataNoSubsampling(image, &jpeg_size, quality, metadata);
-    } else {
-        jpeg = gdImageJpegPtrWithMetadata(image, &jpeg_size, quality, metadata);
+    gdUhdrGetIccPayload(icc_block, &icc_data, &icc_size);
+    gdJpegWriteOptionsInit(&options);
+    options.quality = quality;
+    options.force_no_subsampling = no_subsampling;
+    jpeg = gdImageJpegPtrWithOptions(image, &jpeg_size, &options);
+    if (!jpeg || jpeg_size <= 0) {
+        gdFree(jpeg);
+        gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0, "Failed to encode UltraHDR JPEG component");
+        return GD_UHDR_E_ENCODE;
+    }
+    if (icc_data && icc_size > 0) {
+        with_icc = gdUhdrAddIccProfile(jpeg, (size_t)jpeg_size, icc_data, icc_size,
+                                       &output_size, err);
+        if (!with_icc) {
+            gdFree(jpeg);
+            return GD_UHDR_E_ENCODE;
+        }
+        if (output_size > (size_t)INT_MAX) {
+            gdFree(with_icc);
+            gdFree(jpeg);
+            gdUhdrSetError(err, GD_UHDR_E_ENCODE, 0,
+                           "Encoded UltraHDR JPEG component is too large");
+            return GD_UHDR_E_ENCODE;
+        }
+        gdFree(jpeg);
+        jpeg = with_icc;
+        jpeg_size = (int)output_size;
     }
     if (!jpeg || jpeg_size <= 0) {
         gdFree(jpeg);
@@ -866,8 +891,7 @@ gdUhdrImageCtx(gdUhdrImagePtr im, gdIOCtxPtr ctx, int format, int quality, gdUhd
     uhdr_gainmap_metadata_t metadata;
     uhdr_mem_block_t *base_block = NULL;
     uhdr_mem_block_t *gainmap_block = NULL;
-    gdImageMetadata *base_metadata = NULL;
-    gdImageMetadata *gainmap_metadata = NULL;
+    uhdr_mem_block_t *icc_block = NULL;
     gdImagePtr base_image = NULL;
     gdImagePtr gainmap_image = NULL;
     void *base_jpeg_data = NULL;
@@ -939,24 +963,7 @@ gdUhdrImageCtx(gdUhdrImagePtr im, gdIOCtxPtr ctx, int format, int quality, gdUhd
 
     base_block = uhdr_dec_get_base_image(dec);
     gainmap_block = uhdr_dec_get_gainmap_image(dec);
-
-    /*
-     * Geometry transforms make source EXIF dimensions, orientation, and
-     * thumbnails stale. Preserve ICC, but copy EXIF only for pass-through
-     * writes unless GD learns to rewrite those tags.
-     */
-    status =
-        gdUhdrCreateJpegMetadataFromBlock(base_block, im->op_count == 0, 1, &base_metadata, err);
-    if (status != GD_UHDR_SUCCESS) {
-        goto cleanup;
-    }
-
-    if (!metadata.use_base_cg) {
-        status = gdUhdrCreateJpegMetadataFromBlock(gainmap_block, 0, 1, &gainmap_metadata, err);
-        if (status != GD_UHDR_SUCCESS) {
-            goto cleanup;
-        }
-    }
+    icc_block = uhdr_dec_get_icc(dec);
 
     base_image =
         gdUhdrCreateGdImageFromJpegBlock(base_block, "Failed to decode UltraHDR base image", err);
@@ -977,13 +984,14 @@ gdUhdrImageCtx(gdUhdrImagePtr im, gdIOCtxPtr ctx, int format, int quality, gdUhd
         goto cleanup;
     }
 
-    status = gdUhdrEncodeJpegComponent(base_image, quality, base_metadata, 0, &base_jpeg_data,
+    status = gdUhdrEncodeJpegComponent(base_image, quality, icc_block, 0, &base_jpeg_data,
                                        &base_jpeg_size, err);
     if (status != GD_UHDR_SUCCESS) {
         goto cleanup;
     }
 
-    status = gdUhdrEncodeJpegComponent(gainmap_image, quality, gainmap_metadata, 1,
+    status = gdUhdrEncodeJpegComponent(gainmap_image, quality,
+                                       metadata.use_base_cg ? NULL : icc_block, 1,
                                        &gainmap_jpeg_data, &gainmap_jpeg_size, err);
     if (status != GD_UHDR_SUCCESS) {
         goto cleanup;
@@ -1049,12 +1057,6 @@ cleanup:
     }
     if (base_image) {
         gdImageDestroy(base_image);
-    }
-    if (gainmap_metadata) {
-        gdImageMetadataFree(gainmap_metadata);
-    }
-    if (base_metadata) {
-        gdImageMetadataFree(base_metadata);
     }
     if (enc) {
         uhdr_release_encoder(enc);

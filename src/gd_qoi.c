@@ -165,7 +165,92 @@ static int gdQoiNormalizeColorspace(int colorspace)
     return colorspace == GD_QOI_LINEAR ? QOI_LINEAR : QOI_SRGB;
 }
 
-static int _gdImageQoiCtx(gdImagePtr im, gdIOCtx *outfile, int colorspace)
+static const unsigned char gd_qoi_end_marker[8] = {0, 0, 0, 0, 0, 0, 0, 1};
+
+BGD_DECLARE(void) gdQoiInfoInit(gdQoiInfo *info)
+{
+    if (info != NULL) {
+        memset(info, 0, sizeof(*info));
+    }
+}
+
+BGD_DECLARE(int) gdQoiGetInfoPtr(int size, const void *data, gdQoiInfo *info)
+{
+    const unsigned char *bytes = (const unsigned char *)data;
+    uint32_t width, height;
+
+    if (info == NULL || data == NULL || size < 14 + 8) {
+        return 0;
+    }
+
+    gdQoiInfoInit(info);
+    if (memcmp(bytes, "qoif", 4) != 0) {
+        return 0;
+    }
+
+    width = ((uint32_t)bytes[4] << 24) | ((uint32_t)bytes[5] << 16) |
+        ((uint32_t)bytes[6] << 8) | bytes[7];
+    height = ((uint32_t)bytes[8] << 24) | ((uint32_t)bytes[9] << 16) |
+        ((uint32_t)bytes[10] << 8) | bytes[11];
+
+    if (width == 0 || height == 0 || bytes[12] < 3 || bytes[12] > 4 || bytes[13] > 1 ||
+        memcmp(bytes + size - sizeof(gd_qoi_end_marker), gd_qoi_end_marker, sizeof(gd_qoi_end_marker)) != 0 ||
+        height >= 400000000U / width) {
+        return 0;
+    }
+
+    info->width = width;
+    info->height = height;
+    info->channels = bytes[12];
+    info->colorspace = bytes[13];
+    return 1;
+}
+
+BGD_DECLARE(int) gdQoiGetInfoCtx(gdIOCtxPtr infile, gdQoiInfo *info)
+{
+    void *data;
+    int size = 0;
+    int result;
+
+    if (infile == NULL || info == NULL) {
+        return 0;
+    }
+
+    data = gdQoiReadCtxToMemory(infile, &size);
+    if (data == NULL) {
+        return 0;
+    }
+    result = gdQoiGetInfoPtr(size, data, info);
+    gdFree(data);
+    return result;
+}
+
+BGD_DECLARE(int) gdQoiGetInfo(FILE *infile, gdQoiInfo *info)
+{
+    gdIOCtx *in;
+    int result;
+
+    if (infile == NULL) {
+        return 0;
+    }
+    in = gdNewFileCtx(infile);
+    if (in == NULL) {
+        return 0;
+    }
+    result = gdQoiGetInfoCtx(in, info);
+    in->gd_free(in);
+    return result;
+}
+
+BGD_DECLARE(void) gdQoiWriteOptionsInit(gdQoiWriteOptions *options)
+{
+    if (options != NULL) {
+        options->colorspace = GD_QOI_SRGB;
+        options->metadata = NULL;
+    }
+}
+
+static int _gdImageQoiCtx(gdImagePtr im, gdIOCtx *outfile, const gdQoiWriteOptions *options)
 {
     qoi_desc desc;
     unsigned char *pixels;
@@ -173,8 +258,15 @@ static int _gdImageQoiCtx(gdImagePtr im, gdIOCtx *outfile, int colorspace)
     int encoded_size = 0;
     int result = 0;
 
+    gdQoiWriteOptions default_options;
+
     if (outfile == NULL) {
         return 0;
+    }
+
+    if (options == NULL) {
+        gdQoiWriteOptionsInit(&default_options);
+        options = &default_options;
     }
 
     pixels = gdImageToQoiPixels(im);
@@ -185,7 +277,7 @@ static int _gdImageQoiCtx(gdImagePtr im, gdIOCtx *outfile, int colorspace)
     desc.width = (unsigned int)gdImageSX(im);
     desc.height = (unsigned int)gdImageSY(im);
     desc.channels = 4;
-    desc.colorspace = (unsigned char)gdQoiNormalizeColorspace(colorspace);
+    desc.colorspace = (unsigned char)gdQoiNormalizeColorspace(options->colorspace);
 
     encoded = gdQoiEncode(pixels, &desc, &encoded_size);
     gdFree(pixels);
@@ -218,24 +310,15 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromQoi(FILE *inFile)
 
 BGD_DECLARE(gdImagePtr) gdImageCreateFromQoiPtr(int size, void *data)
 {
-    return gdImageCreateFromQoiPtrWithMetadata(size, data, NULL);
-}
-
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromQoiPtrWithMetadata(int size, void *data, gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(metadata);
     return gdImageCreateFromQoiBytes(data, size);
 }
 
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromQoiCtxWithMetadata(gdIOCtx *infile, gdImageMetadata *metadata)
+BGD_DECLARE(gdImagePtr) gdImageCreateFromQoiCtx(gdIOCtx *infile)
 {
     void *data;
     int size = 0;
     gdImagePtr im;
 
-    ARG_NOT_USED(metadata);
     data = gdQoiReadCtxToMemory(infile, &size);
     if (data == NULL) {
         return NULL;
@@ -243,11 +326,6 @@ gdImageCreateFromQoiCtxWithMetadata(gdIOCtx *infile, gdImageMetadata *metadata)
     im = gdImageCreateFromQoiBytes(data, size);
     gdFree(data);
     return im;
-}
-
-BGD_DECLARE(gdImagePtr) gdImageCreateFromQoiCtx(gdIOCtx *infile)
-{
-    return gdImageCreateFromQoiCtxWithMetadata(infile, NULL);
 }
 
 BGD_DECLARE(gdImagePtr) gdImageCreateFromQoiSource(gdSourcePtr inSource)
@@ -266,27 +344,31 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromQoiSource(gdSourcePtr inSource)
     return im;
 }
 
-BGD_DECLARE(void) gdImageQoiEx(gdImagePtr im, FILE *outFile, int colorspace)
+BGD_DECLARE(int) gdImageQoiWithOptions(gdImagePtr im, FILE *outFile, const gdQoiWriteOptions *options)
 {
     gdIOCtx *out = gdNewFileCtx(outFile);
     if (out == NULL) {
-        return;
+        return 0;
     }
-    gdImageQoiCtxEx(im, out, colorspace);
+    int result = gdImageQoiCtxWithOptions(im, out, options);
     out->gd_free(out);
+    return result;
 }
 
 BGD_DECLARE(void) gdImageQoi(gdImagePtr im, FILE *outFile)
 {
-    gdImageQoiEx(im, outFile, GD_QOI_SRGB);
+    gdImageQoiWithOptions(im, outFile, NULL);
 }
 
-BGD_DECLARE(void *) gdImageQoiPtr(gdImagePtr im, int *size)
+BGD_DECLARE(void) gdImageQoiEx(gdImagePtr im, FILE *outFile, int colorspace)
 {
-    return gdImageQoiPtrEx(im, size, GD_QOI_SRGB);
+    gdQoiWriteOptions options;
+    gdQoiWriteOptionsInit(&options);
+    options.colorspace = colorspace;
+    gdImageQoiWithOptions(im, outFile, &options);
 }
 
-BGD_DECLARE(void *) gdImageQoiPtrEx(gdImagePtr im, int *size, int colorspace)
+BGD_DECLARE(void *) gdImageQoiPtrWithOptions(gdImagePtr im, int *size, const gdQoiWriteOptions *options)
 {
     gdIOCtx *out;
     void *rv = NULL;
@@ -302,59 +384,43 @@ BGD_DECLARE(void *) gdImageQoiPtrEx(gdImagePtr im, int *size, int colorspace)
     if (out == NULL) {
         return NULL;
     }
-    if (_gdImageQoiCtx(im, out, colorspace)) {
+    if (_gdImageQoiCtx(im, out, options)) {
         rv = gdDPExtractData(out, size);
     }
     out->gd_free(out);
     return rv;
 }
 
-BGD_DECLARE(void *)
-gdImageQoiPtrWithMetadata(gdImagePtr im, int *size, const gdImageMetadata *metadata)
+BGD_DECLARE(void *) gdImageQoiPtr(gdImagePtr im, int *size)
 {
-    return gdImageQoiPtrExWithMetadata(im, size, GD_QOI_SRGB, metadata);
+    return gdImageQoiPtrWithOptions(im, size, NULL);
 }
 
-BGD_DECLARE(void *)
-gdImageQoiPtrExWithMetadata(gdImagePtr im, int *size, int colorspace,
-                            const gdImageMetadata *metadata)
+BGD_DECLARE(void *) gdImageQoiPtrEx(gdImagePtr im, int *size, int colorspace)
 {
-    ARG_NOT_USED(metadata);
-    return gdImageQoiPtrEx(im, size, colorspace);
-}
-
-BGD_DECLARE(int)
-gdImageMetadataInjectQoi(void **data, int *size, const gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(data);
-    ARG_NOT_USED(size);
-    ARG_NOT_USED(metadata);
-    return GD_META_OK;
+    gdQoiWriteOptions options;
+    gdQoiWriteOptionsInit(&options);
+    options.colorspace = colorspace;
+    return gdImageQoiPtrWithOptions(im, size, &options);
 }
 
 BGD_DECLARE(void) gdImageQoiCtx(gdImagePtr im, gdIOCtx *outfile)
 {
-    gdImageQoiCtxEx(im, outfile, GD_QOI_SRGB);
+    gdImageQoiCtxWithOptions(im, outfile, NULL);
 }
 
-BGD_DECLARE(void)
-gdImageQoiCtxWithMetadata(gdImagePtr im, gdIOCtx *outfile, const gdImageMetadata *metadata)
+BGD_DECLARE(int) gdImageQoiCtxWithOptions(gdImagePtr im, gdIOCtx *outfile, const gdQoiWriteOptions *options)
 {
-    gdImageQoiCtxExWithMetadata(im, outfile, GD_QOI_SRGB, metadata);
+    return _gdImageQoiCtx(im, outfile, options);
 }
 
 BGD_DECLARE(void)
 gdImageQoiCtxEx(gdImagePtr im, gdIOCtx *outfile, int colorspace)
 {
-    _gdImageQoiCtx(im, outfile, colorspace);
-}
-
-BGD_DECLARE(void)
-gdImageQoiCtxExWithMetadata(gdImagePtr im, gdIOCtx *outfile, int colorspace,
-                            const gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(metadata);
-    _gdImageQoiCtx(im, outfile, colorspace);
+    gdQoiWriteOptions options;
+    gdQoiWriteOptionsInit(&options);
+    options.colorspace = colorspace;
+    gdImageQoiCtxWithOptions(im, outfile, &options);
 }
 
 BGD_DECLARE(void) gdImageQoiToSink(gdImagePtr im, gdSinkPtr outSink)

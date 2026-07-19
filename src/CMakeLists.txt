@@ -1,6 +1,7 @@
 SET (LIBGD_SRC_FILES
 	gd.c
 	gd_avif.c
+	gd_avif_metadata.c
 	gd_bmp.c
 	gd_color.c
 	gd_color_map.c
@@ -19,6 +20,7 @@ SET (LIBGD_SRC_FILES
 	gd_gif_in.c
 	gd_gif_out.c
 	gd_heif.c
+	gd_heif_metadata.c
 	gd_interesting.c
 	gd_interpolation.c
 	gd_jxl.c

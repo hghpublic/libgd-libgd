@@ -12,6 +12,7 @@
 #include "gd_errors.h"
 #include "gd_intern.h"
 #include "gdhelpers.h"
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +45,7 @@ struct gdWebpWrite {
     int ownsCtx;
     int memoryWriter;
     WebPAnimEncoder *encoder;
-    gdWebpWriteOptions options;
+    gdWebpAnimWriteOptions options;
     int canvasWidth;
     int canvasHeight;
     int timestamp;
@@ -62,6 +63,16 @@ BGD_DECLARE(void) gdWebpReadOptionsInit(gdWebpReadOptions *options)
 }
 
 BGD_DECLARE(void) gdWebpWriteOptionsInit(gdWebpWriteOptions *options)
+{
+    if (options == NULL) {
+        return;
+    }
+    memset(options, 0, sizeof(*options));
+    options->quality = -1;
+    options->metadata = NULL;
+}
+
+BGD_DECLARE(void) gdWebpAnimWriteOptionsInit(gdWebpAnimWriteOptions *options)
 {
     if (options == NULL) {
         return;
@@ -487,6 +498,43 @@ BGD_DECLARE(int) gdWebpReadGetInfo(gdWebpReadPtr webp, gdWebpInfo *info)
     return 1;
 }
 
+BGD_DECLARE(int) gdWebpReadGetMetadata(gdWebpReadPtr webp, gdImageMetadata *metadata)
+{
+    static const struct {
+        const char *fourcc;
+        const char *key;
+        uint32_t flag;
+    } chunks[] = {
+        {"EXIF", "exif", EXIF_FLAG},
+        {"XMP ", "xmp", XMP_FLAG},
+        {"ICCP", "icc", ICCP_FLAG},
+    };
+    uint32_t flags;
+    size_t i;
+
+    if (webp == NULL || webp->demux == NULL || metadata == NULL) {
+        return GD_META_ERR_INVALID;
+    }
+
+    flags = WebPDemuxGetI(webp->demux, WEBP_FF_FORMAT_FLAGS);
+    for (i = 0; i < sizeof(chunks) / sizeof(chunks[0]); i++) {
+        WebPChunkIterator iter;
+
+        if ((flags & chunks[i].flag) == 0 || !WebPDemuxGetChunk(webp->demux, chunks[i].fourcc, 1, &iter)) {
+            continue;
+        }
+        {
+            int metadata_status = gdImageMetadataSetProfile(metadata, chunks[i].key, iter.chunk.bytes, iter.chunk.size);
+            if (metadata_status != GD_META_OK) {
+                WebPDemuxReleaseChunkIterator(&iter);
+                return metadata_status;
+            }
+        }
+        WebPDemuxReleaseChunkIterator(&iter);
+    }
+    return GD_META_OK;
+}
+
 BGD_DECLARE(int)
 gdWebpReadNextFrame(gdWebpReadPtr webp, gdWebpFrameInfo *info, gdImagePtr *frame)
 {
@@ -726,6 +774,157 @@ BGD_DECLARE(void *) gdImageWebpPtrEx(gdImagePtr im, int *size, int quality)
     return rv;
 }
 
+static int WebpWriteApplyMetadata(void **data, int *size, const gdImageMetadata *metadata)
+{
+    WebPData input, output;
+    WebPMux *mux;
+    size_t i;
+    int have_chunk = 0;
+
+    if (data == NULL || size == NULL || *data == NULL || *size < 0) return GD_META_ERR_INVALID;
+    if (metadata == NULL || gdImageMetadataGetProfileCount(metadata) == 0) return GD_META_OK;
+    input.bytes = (const uint8_t *) *data;
+    input.size = (size_t) *size;
+    mux = WebPMuxCreate(&input, 1);
+    if (mux == NULL) return GD_META_ERR_FORMAT;
+    for (i = 0; i < gdImageMetadataGetProfileCount(metadata); i++) {
+        const char *key;
+        const unsigned char *profile;
+        size_t profile_size;
+        const char *chunk_id;
+        WebPData chunk;
+
+        if (gdImageMetadataGetProfileAt(metadata, i, &key, &profile, &profile_size) != GD_META_OK) {
+            WebPMuxDelete(mux);
+            return GD_META_ERR_INVALID;
+        }
+        if (strcmp(key, "exif") == 0) chunk_id = "EXIF";
+        else if (strcmp(key, "xmp") == 0) chunk_id = "XMP ";
+        else if (strcmp(key, "icc") == 0) chunk_id = "ICCP";
+        else continue;
+        chunk.bytes = profile;
+        chunk.size = profile_size;
+        if (WebPMuxSetChunk(mux, chunk_id, &chunk, 1) != WEBP_MUX_OK) {
+            WebPMuxDelete(mux);
+            return GD_META_ERR_LIMIT;
+        }
+        have_chunk = 1;
+    }
+    if (!have_chunk) {
+        WebPMuxDelete(mux);
+        return GD_META_OK;
+    }
+    output.bytes = NULL;
+    output.size = 0;
+    if (WebPMuxAssemble(mux, &output) != WEBP_MUX_OK) {
+        WebPMuxDelete(mux);
+        return GD_META_ERR_LIMIT;
+    }
+    {
+        size_t assembled_size = output.size;
+        if (assembled_size > INT_MAX) {
+            WebPDataClear(&output);
+            WebPMuxDelete(mux);
+            return GD_META_ERR_LIMIT;
+        }
+        void *assembled = gdMalloc(output.size);
+        if (assembled == NULL) {
+            WebPDataClear(&output);
+            WebPMuxDelete(mux);
+            return GD_META_ERR_NOMEM;
+        }
+        memcpy(assembled, output.bytes, output.size);
+        WebPDataClear(&output);
+        WebPMuxDelete(mux);
+        gdFree(*data);
+        *data = assembled;
+        *size = (int) assembled_size;
+    }
+    return GD_META_OK;
+}
+
+BGD_DECLARE(int)
+gdImageWebpWithOptions(gdImagePtr im, FILE *outFile, const gdWebpWriteOptions *options)
+{
+    gdIOCtx *out;
+    int status;
+
+    if (outFile == NULL) {
+        return 1;
+    }
+    out = gdNewFileCtx(outFile);
+    if (out == NULL) {
+        return 1;
+    }
+    status = gdImageWebpCtxWithOptions(im, out, options);
+    out->gd_free(out);
+    return status;
+}
+
+BGD_DECLARE(int)
+gdImageWebpCtxWithOptions(gdImagePtr im, gdIOCtxPtr outfile, const gdWebpWriteOptions *options)
+{
+    gdWebpWriteOptions defaults;
+    void *data;
+    int size = 0;
+    int status = 1;
+
+    if (outfile == NULL) {
+        return 1;
+    }
+    if (options == NULL) {
+        gdWebpWriteOptionsInit(&defaults);
+        options = &defaults;
+    }
+    if (options->metadata == NULL) {
+        return _gdImageWebpCtx(im, outfile, options->quality);
+    }
+    data = gdImageWebpPtrWithOptions(im, &size, options);
+    if (data == NULL || size < 0) {
+        gdFree(data);
+        return 1;
+    }
+    if (gdPutBuf(data, size, outfile) == size) {
+        status = 0;
+    }
+    gdFree(data);
+    return status;
+}
+
+BGD_DECLARE(void *)
+gdImageWebpPtrWithOptions(gdImagePtr im, int *size, const gdWebpWriteOptions *options)
+{
+    gdWebpWriteOptions defaults;
+    void *rv;
+    gdIOCtx *out;
+
+    if (size != NULL) {
+        *size = 0;
+    }
+    if (options == NULL) {
+        gdWebpWriteOptionsInit(&defaults);
+        options = &defaults;
+    }
+    out = gdNewDynamicCtx(2048, NULL);
+    if (out == NULL) {
+        return NULL;
+    }
+    if (_gdImageWebpCtx(im, out, options->quality)) {
+        rv = NULL;
+    } else {
+        rv = gdDPExtractData(out, size);
+        if (rv != NULL && WebpWriteApplyMetadata(&rv, size, options->metadata) != GD_META_OK) {
+            gdFree(rv);
+            rv = NULL;
+            if (size != NULL) {
+                *size = 0;
+            }
+        }
+    }
+    out->gd_free(out);
+    return rv;
+}
+
 static void WebpWriteFree(gdWebpWritePtr webp)
 {
     if (webp == NULL) {
@@ -776,12 +975,12 @@ static int WebpWriteEnsureEncoder(gdWebpWritePtr webp, gdImagePtr image)
     return webp->encoder != NULL;
 }
 
-static int WebpWriteNormalizeOptions(const gdWebpWriteOptions *options,
-                                     gdWebpWriteOptions *normalized)
+static int WebpAnimWriteNormalizeOptions(const gdWebpAnimWriteOptions *options,
+                                     gdWebpAnimWriteOptions *normalized)
 {
-    gdWebpWriteOptions defaults;
+    gdWebpAnimWriteOptions defaults;
 
-    gdWebpWriteOptionsInit(&defaults);
+    gdWebpAnimWriteOptionsInit(&defaults);
     *normalized = defaults;
     if (options == NULL) {
         return 1;
@@ -853,7 +1052,7 @@ done:
 }
 
 BGD_DECLARE(gdWebpWritePtr)
-gdWebpWriteOpen(FILE *outFile, const gdWebpWriteOptions *options)
+gdWebpWriteOpen(FILE *outFile, const gdWebpAnimWriteOptions *options)
 {
     gdIOCtx *out;
     gdWebpWritePtr webp;
@@ -875,12 +1074,12 @@ gdWebpWriteOpen(FILE *outFile, const gdWebpWriteOptions *options)
 }
 
 BGD_DECLARE(gdWebpWritePtr)
-gdWebpWriteOpenCtx(gdIOCtxPtr out, const gdWebpWriteOptions *options)
+gdWebpWriteOpenCtx(gdIOCtxPtr out, const gdWebpAnimWriteOptions *options)
 {
-    gdWebpWriteOptions normalized;
+    gdWebpAnimWriteOptions normalized;
     gdWebpWritePtr webp;
 
-    if (out == NULL || !WebpWriteNormalizeOptions(options, &normalized)) {
+    if (out == NULL || !WebpAnimWriteNormalizeOptions(options, &normalized)) {
         return NULL;
     }
     webp = (gdWebpWritePtr)gdCalloc(1, sizeof(struct gdWebpWrite));
@@ -894,7 +1093,7 @@ gdWebpWriteOpenCtx(gdIOCtxPtr out, const gdWebpWriteOptions *options)
 }
 
 BGD_DECLARE(gdWebpWritePtr)
-gdWebpWriteOpenPtr(const gdWebpWriteOptions *options)
+gdWebpWriteOpenPtr(const gdWebpAnimWriteOptions *options)
 {
     gdIOCtx *out;
     gdWebpWritePtr webp;
@@ -1020,6 +1219,16 @@ BGD_DECLARE(void) gdWebpWriteOptionsInit(gdWebpWriteOptions *options)
     }
     memset(options, 0, sizeof(*options));
     options->quality = -1;
+    options->metadata = NULL;
+}
+
+BGD_DECLARE(void) gdWebpAnimWriteOptionsInit(gdWebpAnimWriteOptions *options)
+{
+    if (options == NULL) {
+        return;
+    }
+    memset(options, 0, sizeof(*options));
+    options->quality = -1;
     options->method = -1;
 }
 
@@ -1081,6 +1290,36 @@ BGD_DECLARE(void *) gdImageWebpPtrEx(gdImagePtr im, int *size, int quality)
     ARG_NOT_USED(im);
     ARG_NOT_USED(size);
     ARG_NOT_USED(quality);
+    _noWebpError();
+    return NULL;
+}
+
+BGD_DECLARE(int)
+gdImageWebpWithOptions(gdImagePtr im, FILE *outFile, const gdWebpWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(outFile);
+    ARG_NOT_USED(options);
+    _noWebpError();
+    return 1;
+}
+
+BGD_DECLARE(int)
+gdImageWebpCtxWithOptions(gdImagePtr im, gdIOCtxPtr outfile, const gdWebpWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(outfile);
+    ARG_NOT_USED(options);
+    _noWebpError();
+    return 1;
+}
+
+BGD_DECLARE(void *)
+gdImageWebpPtrWithOptions(gdImagePtr im, int *size, const gdWebpWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(size);
+    ARG_NOT_USED(options);
     _noWebpError();
     return NULL;
 }
@@ -1148,6 +1387,14 @@ BGD_DECLARE(int) gdWebpReadGetInfo(gdWebpReadPtr webp, gdWebpInfo *info)
     return 0;
 }
 
+BGD_DECLARE(int) gdWebpReadGetMetadata(gdWebpReadPtr webp, gdImageMetadata *metadata)
+{
+    ARG_NOT_USED(webp);
+    ARG_NOT_USED(metadata);
+    _noWebpError();
+    return GD_META_ERR_UNSUPPORTED;
+}
+
 BGD_DECLARE(int)
 gdWebpReadNextFrame(gdWebpReadPtr webp, gdWebpFrameInfo *info, gdImagePtr *frame)
 {
@@ -1173,7 +1420,7 @@ gdWebpReadNextImage(gdWebpReadPtr webp, gdWebpFrameInfo *info, gdImagePtr *image
 }
 
 BGD_DECLARE(gdWebpWritePtr)
-gdWebpWriteOpen(FILE *outFile, const gdWebpWriteOptions *options)
+gdWebpWriteOpen(FILE *outFile, const gdWebpAnimWriteOptions *options)
 {
     ARG_NOT_USED(outFile);
     ARG_NOT_USED(options);
@@ -1182,7 +1429,7 @@ gdWebpWriteOpen(FILE *outFile, const gdWebpWriteOptions *options)
 }
 
 BGD_DECLARE(gdWebpWritePtr)
-gdWebpWriteOpenCtx(gdIOCtxPtr out, const gdWebpWriteOptions *options)
+gdWebpWriteOpenCtx(gdIOCtxPtr out, const gdWebpAnimWriteOptions *options)
 {
     ARG_NOT_USED(out);
     ARG_NOT_USED(options);
@@ -1191,7 +1438,7 @@ gdWebpWriteOpenCtx(gdIOCtxPtr out, const gdWebpWriteOptions *options)
 }
 
 BGD_DECLARE(gdWebpWritePtr)
-gdWebpWriteOpenPtr(const gdWebpWriteOptions *options)
+gdWebpWriteOpenPtr(const gdWebpAnimWriteOptions *options)
 {
     ARG_NOT_USED(options);
     _noWebpError();

@@ -108,15 +108,21 @@ int main(void)
 
 	metadata = gdImageMetadataCreate();
 	gdTestAssert(metadata != NULL);
-	decoded = gdImageCreateFromJpegPtrWithMetadata((int)source_data.size(), &source_data[0], metadata);
+	gdTestAssert(gdJpegGetMetadataPtr((int)source_data.size(), &source_data[0], metadata) == 0);
+	decoded = gdImageCreateFromJpegPtr((int)source_data.size(), &source_data[0]);
 	gdTestAssert(decoded != NULL);
 
 	exif = gdImageMetadataGetProfile(metadata, "exif", &exif_size);
 	gdTestAssert(exif != NULL);
-	gdTestAssert(exif_size > 6);
-	gdTestAssert(exif[0] == 'E' && exif[1] == 'x' && exif[2] == 'i' && exif[3] == 'f' && exif[4] == 0 && exif[5] == 0);
+	gdTestAssert(exif_size > 2);
+	gdTestAssert((exif[0] == 'I' && exif[1] == 'I') ||
+					(exif[0] == 'M' && exif[1] == 'M'));
 
-	roundtrip = gdImageJpegPtrWithMetadata(decoded, &roundtrip_size, 90, metadata);
+	gdJpegWriteOptions write_options;
+	gdJpegWriteOptionsInit(&write_options);
+	write_options.quality = 90;
+	write_options.metadata = metadata;
+	roundtrip = gdImageJpegPtrWithOptions(decoded, &roundtrip_size, &write_options);
 	gdTestAssert(roundtrip != NULL);
 	gdTestAssert(roundtrip_size > 0);
 	gdTestAssert(write_file(roundtrip_path, roundtrip, roundtrip_size));

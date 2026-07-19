@@ -194,7 +194,7 @@ static gdImagePtr make_frame(int frame)
 int main(int argc, char **argv)
 {
     FILE *output;
-    gdJxlWriteOptions options;
+    gdJxlAnimWriteOptions options;
     gdJxlWritePtr writer;
     int lossless;
     float distance;
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    gdJxlWriteOptionsInit(&options);
+    gdJxlAnimWriteOptionsInit(&options);
     options.canvasWidth = WIDTH;
     options.canvasHeight = HEIGHT;
     options.lossless = lossless;

@@ -200,33 +200,6 @@ static int gdJpegMapColorSpace(J_COLOR_SPACE color_space)
 static int gdJpegMarkerStartsWith(jpeg_saved_marker_ptr marker, const unsigned char *prefix,
                                   size_t prefix_size);
 
-static int gdJpegInfoCollectMarkers(j_decompress_ptr cinfo, gdJpegInfo *info)
-{
-    static const unsigned char exif_signature[] = {'E', 'x', 'i', 'f', '\0', '\0'};
-    static const unsigned char xmp_signature[] = "http://ns.adobe.com/xap/1.0/";
-    static const unsigned char iptc_signature[] = "Photoshop 3.0";
-    static const unsigned char icc_signature[] = "ICC_PROFILE";
-    jpeg_saved_marker_ptr marker;
-
-    for (marker = cinfo->marker_list; marker != NULL; marker = marker->next) {
-        if (marker->marker == JPEG_APP0 + 1 &&
-            gdJpegMarkerStartsWith(marker, exif_signature, sizeof(exif_signature))) {
-            info->has_exif = 1;
-        } else if (marker->marker == JPEG_APP0 + 1 &&
-                   gdJpegMarkerStartsWith(marker, xmp_signature, sizeof(xmp_signature))) {
-            info->has_xmp = 1;
-        } else if (marker->marker == JPEG_APP0 + 2 &&
-                   gdJpegMarkerStartsWith(marker, icc_signature, sizeof(icc_signature) - 1)) {
-            info->has_icc = 1;
-        } else if (marker->marker == JPEG_APP0 + 13 &&
-                   gdJpegMarkerStartsWith(marker, iptc_signature, sizeof(iptc_signature))) {
-            info->has_iptc = 1;
-        }
-    }
-
-    return 0;
-}
-
 BGD_DECLARE(int) gdJpegGetInfoCtx(gdIOCtxPtr infile, gdJpegInfo *info)
 {
     struct jpeg_decompress_struct cinfo;
@@ -259,10 +232,6 @@ BGD_DECLARE(int) gdJpegGetInfoCtx(gdIOCtxPtr infile, gdJpegInfo *info)
     jpeg_create_decompress(&cinfo);
     jpeg_gdIOCtx_src(&cinfo, infile);
 
-    jpeg_save_markers(&cinfo, JPEG_APP0 + 1, 0xFFFF);
-    jpeg_save_markers(&cinfo, JPEG_APP0 + 2, 0xFFFF);
-    jpeg_save_markers(&cinfo, JPEG_APP0 + 13, 0xFFFF);
-
     retval = jpeg_read_header(&cinfo, TRUE);
     if (retval != JPEG_HEADER_OK) {
         jpeg_destroy_decompress(&cinfo);
@@ -284,8 +253,6 @@ BGD_DECLARE(int) gdJpegGetInfoCtx(gdIOCtxPtr infile, gdJpegInfo *info)
     info->density_unit = cinfo.density_unit;
     info->x_density = (int)cinfo.X_density;
     info->y_density = (int)cinfo.Y_density;
-    gdJpegInfoCollectMarkers(&cinfo, info);
-
     jpeg_destroy_decompress(&cinfo);
     return 0;
 }
@@ -294,6 +261,10 @@ BGD_DECLARE(int) gdJpegGetInfo(FILE *infile, gdJpegInfo *info)
 {
     gdIOCtx *in;
     int result;
+
+    if (infile == NULL || info == NULL) {
+        return 1;
+    }
 
     in = gdNewFileCtx(infile);
     if (in == NULL) {
@@ -309,7 +280,7 @@ BGD_DECLARE(int) gdJpegGetInfoPtr(int size, const void *data, gdJpegInfo *info)
     gdIOCtx *in;
     int result;
 
-    if (size <= 0 || data == NULL) {
+    if (size <= 0 || data == NULL || info == NULL) {
         return 1;
     }
     in = gdNewDynamicCtxEx(size, (void *)data, 0);
@@ -341,38 +312,6 @@ BGD_DECLARE(void *) gdImageJpegPtr(gdImagePtr im, int *size, int quality)
     if (out == NULL)
         return NULL;
     if (!_gdImageJpegCtx(im, out, quality, NULL, 0, -1)) {
-        rv = gdDPExtractData(out, size);
-    } else {
-        rv = NULL;
-    }
-    out->gd_free(out);
-    return rv;
-}
-
-BGD_DECLARE(void *)
-gdImageJpegPtrWithMetadata(gdImagePtr im, int *size, int quality, const gdImageMetadata *metadata)
-{
-    void *rv;
-    gdIOCtx *out = gdNewDynamicCtx(2048, NULL);
-    if (out == NULL)
-        return NULL;
-    if (!_gdImageJpegCtx(im, out, quality, metadata, 0, -1)) {
-        rv = gdDPExtractData(out, size);
-    } else {
-        rv = NULL;
-    }
-    out->gd_free(out);
-    return rv;
-}
-
-void *gdImageJpegPtrWithMetadataNoSubsampling(gdImagePtr im, int *size, int quality,
-                                              const gdImageMetadata *metadata)
-{
-    void *rv;
-    gdIOCtx *out = gdNewDynamicCtx(2048, NULL);
-    if (out == NULL)
-        return NULL;
-    if (!_gdImageJpegCtx(im, out, quality, metadata, 1, -1)) {
         rv = gdDPExtractData(out, size);
     } else {
         rv = NULL;
@@ -446,71 +385,60 @@ BGD_DECLARE(void) gdImageJpegCtx(gdImagePtr im, gdIOCtx *outfile, int quality)
     _gdImageJpegCtx(im, outfile, quality, NULL, 0, -1);
 }
 
-BGD_DECLARE(void)
-gdImageJpegCtxWithMetadata(gdImagePtr im, gdIOCtx *outfile, int quality,
-                           const gdImageMetadata *metadata)
+static int gdJpegWriteProfileMarker(j_compress_ptr cinfo, int marker,
+                                    const unsigned char *prefix, size_t prefix_size,
+                                    const unsigned char *data, size_t size)
 {
-    _gdImageJpegCtx(im, outfile, quality, metadata, 0, -1);
-}
+    unsigned char *payload;
 
-/* returns 0 on success, 1 on failure */
-static int gdJpegWriteAppMarker(j_compress_ptr cinfo, int marker, const unsigned char *data,
-                                size_t size)
-{
-    if (data == NULL && size != 0) {
+    if (data == NULL || size > 65533 - prefix_size) {
+        return size == 0 ? 0 : 1;
+    }
+    payload = (unsigned char *)gdMalloc(prefix_size + size);
+    if (payload == NULL) {
         return 1;
     }
-    if (size > 65533) {
-        return 1;
-    }
-    jpeg_write_marker(cinfo, marker, data, (unsigned int)size);
+    memcpy(payload, prefix, prefix_size);
+    memcpy(payload + prefix_size, data, size);
+    jpeg_write_marker(cinfo, marker, payload, (unsigned int)(prefix_size + size));
+    gdFree(payload);
     return 0;
 }
 
-static int gdJpegWriteIccProfile(j_compress_ptr cinfo, const unsigned char *data, size_t size)
+static int gdJpegWriteIptcMarker(j_compress_ptr cinfo, const unsigned char *data, size_t size)
 {
-    static const unsigned char icc_signature[] = "ICC_PROFILE";
-    unsigned char *segment;
-    size_t offset = 0;
-    size_t max_payload = 65533 - 14;
-    int segment_count;
-    int segment_index;
+    static const unsigned char photoshop[] = "Photoshop 3.0\0";
+    size_t payload_size = sizeof(photoshop) - 1 + 4 + 2 + 1 + 1 + 4 + size + (size & 1);
+    unsigned char *payload;
+    size_t offset = sizeof(photoshop) - 1;
 
-    if (data == NULL && size != 0) {
+    if (data == NULL || size > 65533 || payload_size > 65533 || size > UINT_MAX) {
+        return size == 0 ? 0 : 1;
+    }
+    payload = (unsigned char *)gdCalloc(1, payload_size);
+    if (payload == NULL) {
         return 1;
     }
-    if (size == 0) {
-        return 0;
-    }
-    if (size > max_payload * 255) {
-        return 1;
-    }
-
-    segment_count = (int)((size + max_payload - 1) / max_payload);
-    segment = (unsigned char *)gdMalloc(65533);
-    if (segment == NULL) {
-        return 1;
-    }
-    memcpy(segment, icc_signature, 12);
-
-    for (segment_index = 1; segment_index <= segment_count; segment_index++) {
-        size_t chunk_size = size - offset;
-        if (chunk_size > max_payload) {
-            chunk_size = max_payload;
-        }
-        segment[12] = (unsigned char)segment_index;
-        segment[13] = (unsigned char)segment_count;
-        memcpy(segment + 14, data + offset, chunk_size);
-        jpeg_write_marker(cinfo, JPEG_APP0 + 2, segment, (unsigned int)(chunk_size + 14));
-        offset += chunk_size;
-    }
-
-    gdFree(segment);
+    memcpy(payload, photoshop, sizeof(photoshop) - 1);
+    memcpy(payload + offset, "8BIM", 4);
+    offset += 4;
+    payload[offset++] = 0x04;
+    payload[offset++] = 0x04;
+    payload[offset++] = 0;
+    payload[offset++] = 0;
+    payload[offset++] = (unsigned char)(size >> 24);
+    payload[offset++] = (unsigned char)(size >> 16);
+    payload[offset++] = (unsigned char)(size >> 8);
+    payload[offset++] = (unsigned char)size;
+    memcpy(payload + offset, data, size);
+    jpeg_write_marker(cinfo, JPEG_APP0 + 13, payload, (unsigned int)payload_size);
+    gdFree(payload);
     return 0;
 }
 
 static int gdJpegWriteMetadata(j_compress_ptr cinfo, const gdImageMetadata *metadata)
 {
+    static const unsigned char xmp_prefix[] = "http://ns.adobe.com/xap/1.0/\0";
     const unsigned char *data;
     size_t size;
 
@@ -519,19 +447,19 @@ static int gdJpegWriteMetadata(j_compress_ptr cinfo, const gdImageMetadata *meta
     }
 
     data = gdImageMetadataGetProfile(metadata, "exif", &size);
-    if (data != NULL && gdJpegWriteAppMarker(cinfo, JPEG_APP0 + 1, data, size)) {
+    if (data != NULL && gdJpegWriteProfileMarker(cinfo, JPEG_APP0 + 1,
+                                                  (const unsigned char *)"Exif\0\0", 6,
+                                                  data, size)) {
         return 1;
     }
     data = gdImageMetadataGetProfile(metadata, "xmp", &size);
-    if (data != NULL && gdJpegWriteAppMarker(cinfo, JPEG_APP0 + 1, data, size)) {
-        return 1;
-    }
-    data = gdImageMetadataGetProfile(metadata, "icc", &size);
-    if (data != NULL && gdJpegWriteIccProfile(cinfo, data, size)) {
+    if (data != NULL && gdJpegWriteProfileMarker(cinfo, JPEG_APP0 + 1,
+                                                  xmp_prefix, sizeof(xmp_prefix) - 1,
+                                                  data, size)) {
         return 1;
     }
     data = gdImageMetadataGetProfile(metadata, "iptc", &size);
-    if (data != NULL && gdJpegWriteAppMarker(cinfo, JPEG_APP0 + 13, data, size)) {
+    if (data != NULL && gdJpegWriteIptcMarker(cinfo, data, size)) {
         return 1;
     }
 
@@ -769,32 +697,11 @@ gdImageCreateFromJpegPtrWithOptions(int size, void *data, const gdJpegReadOption
     return im;
 }
 
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromJpegPtrWithMetadata(int size, void *data, gdImageMetadata *metadata)
-{
-    return gdImageCreateFromJpegPtrExWithMetadata(size, data, 1, metadata);
-}
-
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromJpegPtrExWithMetadata(int size, void *data, int ignore_warning,
-                                       gdImageMetadata *metadata)
-{
-    gdImagePtr im;
-    gdIOCtx *in = gdNewDynamicCtxEx(size, data, 0);
-    if (!in) {
-        return 0;
-    }
-    im = gdImageCreateFromJpegCtxExWithMetadata(in, ignore_warning, metadata);
-    in->gd_free(in);
-    return im;
-}
-
 static void jpeg_gdIOCtx_src(j_decompress_ptr cinfo, gdIOCtx *infile);
 
 static int CMYKToRGB(int c, int m, int y, int k, int inverted);
-
-static gdImagePtr gdImageCreateFromJpegCtxWithOptionsAndMetadata(
-    gdIOCtx *infile, const gdJpegReadOptions *options, gdImageMetadata *metadata);
+static gdImagePtr gdImageCreateFromJpegCtxWithOptionsInternal(
+    gdIOCtx *infile, const gdJpegReadOptions *options);
 
 static unsigned int gdJpegGcd(unsigned int a, unsigned int b)
 {
@@ -876,80 +783,46 @@ static int gdJpegMarkerStartsWith(jpeg_saved_marker_ptr marker, const unsigned c
     return marker->data_length >= prefix_size && memcmp(marker->data, prefix, prefix_size) == 0;
 }
 
-static int gdJpegCollectIccProfile(j_decompress_ptr cinfo, gdImageMetadata *metadata)
+static int gdJpegCollectIptc(const unsigned char *data, size_t size,
+                             const unsigned char **iptc, size_t *iptc_size)
 {
-    static const unsigned char icc_signature[] = "ICC_PROFILE";
-    jpeg_saved_marker_ptr marker;
-    jpeg_saved_marker_ptr segments[256];
-    unsigned int segment_sizes[256];
-    unsigned int segment_count = 0;
-    unsigned int i;
-    size_t total_size = 0;
-    size_t offset = 0;
-    unsigned char *icc;
-    int status;
+    size_t offset = sizeof("Photoshop 3.0");
 
-    memset(segments, 0, sizeof(segments));
-    memset(segment_sizes, 0, sizeof(segment_sizes));
-
-    for (marker = cinfo->marker_list; marker != NULL; marker = marker->next) {
-        unsigned int sequence;
-        unsigned int count;
-
-        if (marker->marker != JPEG_APP0 + 2 || !gdJpegMarkerStartsWith(marker, icc_signature, 12) ||
-            marker->data_length < 14) {
-            continue;
+    if (size < offset || memcmp(data, "Photoshop 3.0\0", offset) != 0) {
+        return GD_META_ERR_PARSE;
         }
-
-        sequence = marker->data[12];
-        count = marker->data[13];
-        if (sequence == 0 || count == 0 || sequence > count) {
+    while (offset < size) {
+        unsigned int resource_size;
+        unsigned int resource_id;
+        size_t name_size, padded_name_size;
+        if (size - offset < 9 || memcmp(data + offset, "8BIM", 4) != 0) {
             return GD_META_ERR_PARSE;
         }
-        if (segment_count == 0) {
-            segment_count = count;
-        } else if (segment_count != count) {
+        offset += 4;
+        resource_id = ((unsigned int)data[offset] << 8) | data[offset + 1];
+        offset += 2;
+        name_size = data[offset++];
+        padded_name_size = ((name_size + 2) & ~1U) - 1;
+        if (size - offset < padded_name_size + 4) {
             return GD_META_ERR_PARSE;
         }
-        if (segments[sequence] != NULL) {
+        offset += padded_name_size;
+        resource_size = ((unsigned int)data[offset] << 24) |
+                        ((unsigned int)data[offset + 1] << 16) |
+                        ((unsigned int)data[offset + 2] << 8) |
+                        data[offset + 3];
+        offset += 4;
+        if (resource_size > size - offset) {
             return GD_META_ERR_PARSE;
         }
-        segments[sequence] = marker;
-        segment_sizes[sequence] = marker->data_length - 14;
-        if ((size_t)-1 - total_size < segment_sizes[sequence]) {
-            return GD_META_ERR_LIMIT;
+        if (resource_id == 0x0404) {
+            *iptc = data + offset;
+            *iptc_size = resource_size;
+            return GD_META_OK;
         }
-        total_size += segment_sizes[sequence];
+        offset += resource_size + (resource_size & 1);
     }
-
-    if (segment_count == 0) {
-        return GD_META_OK;
-    }
-
-    for (i = 1; i <= segment_count; i++) {
-        if (segments[i] == NULL) {
-            return GD_META_ERR_PARSE;
-        }
-    }
-
-    icc = (unsigned char *)gdMalloc(total_size);
-    if (icc == NULL && total_size != 0) {
-        return GD_META_ERR_NOMEM;
-    }
-
-    for (i = 1; i <= segment_count; i++) {
-        if (segment_sizes[i] != 0) {
-            // codechecker_false_positive [all] suppress all checker results
-            memcpy(icc + offset, segments[i]->data + 14, segment_sizes[i]);
-        }
-        offset += segment_sizes[i];
-    }
-
-    status = gdImageMetadataSetProfile(metadata, "icc", icc, total_size);
-    if (icc != NULL) {
-        gdFree(icc);
-    }
-    return status;
+    return GD_META_ERR_PARSE;
 }
 
 static int gdJpegCollectMetadata(j_decompress_ptr cinfo, gdImageMetadata *metadata)
@@ -967,26 +840,107 @@ static int gdJpegCollectMetadata(j_decompress_ptr cinfo, gdImageMetadata *metada
     for (marker = cinfo->marker_list; marker != NULL; marker = marker->next) {
         if (marker->marker == JPEG_APP0 + 1 &&
             gdJpegMarkerStartsWith(marker, exif_signature, sizeof(exif_signature))) {
-            status = gdImageMetadataSetProfile(metadata, "exif", marker->data, marker->data_length);
+            status = gdImageMetadataSetProfile(metadata, "exif", marker->data + sizeof(exif_signature),
+                                               marker->data_length - sizeof(exif_signature));
             if (status != GD_META_OK) {
                 return status;
             }
         } else if (marker->marker == JPEG_APP0 + 1 &&
                    gdJpegMarkerStartsWith(marker, xmp_signature, sizeof(xmp_signature))) {
-            status = gdImageMetadataSetProfile(metadata, "xmp", marker->data, marker->data_length);
+            size_t prefix_size = sizeof(xmp_signature);
+            if (marker->data_length > prefix_size && marker->data[prefix_size] == '\0') {
+                prefix_size++;
+            }
+            status = gdImageMetadataSetProfile(metadata, "xmp", marker->data + prefix_size,
+                                               marker->data_length - prefix_size);
             if (status != GD_META_OK) {
                 return status;
             }
         } else if (marker->marker == JPEG_APP0 + 13 &&
                    gdJpegMarkerStartsWith(marker, iptc_signature, sizeof(iptc_signature))) {
-            status = gdImageMetadataSetProfile(metadata, "iptc", marker->data, marker->data_length);
+            const unsigned char *iptc;
+            size_t iptc_size;
+            status = gdJpegCollectIptc(marker->data, marker->data_length, &iptc, &iptc_size);
+            if (status == GD_META_OK) {
+                status = gdImageMetadataSetProfile(metadata, "iptc", iptc, iptc_size);
+            }
             if (status != GD_META_OK) {
                 return status;
             }
         }
     }
 
-    return gdJpegCollectIccProfile(cinfo, metadata);
+    return GD_META_OK;
+}
+
+static int gdJpegReadMetadataCtx(gdIOCtxPtr infile, gdImageMetadata *metadata)
+{
+    struct jpeg_decompress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+    jmpbuf_wrapper jmpbufw;
+    int retval;
+
+    if (infile == NULL || metadata == NULL) {
+        return GD_META_ERR_INVALID;
+    }
+    memset(&cinfo, 0, sizeof(cinfo));
+    memset(&jerr, 0, sizeof(jerr));
+    memset(&jmpbufw, 0, sizeof(jmpbufw));
+    jmpbufw.ignore_warning = 1;
+    cinfo.err = jpeg_std_error(&jerr);
+    cinfo.client_data = &jmpbufw;
+    cinfo.err->emit_message = jpeg_emit_message;
+    if (setjmp(jmpbufw.jmpbuf) != 0) {
+        jpeg_destroy_decompress(&cinfo);
+        return GD_META_ERR_PARSE;
+    }
+    cinfo.err->error_exit = fatal_jpeg_error;
+    jpeg_create_decompress(&cinfo);
+    jpeg_gdIOCtx_src(&cinfo, infile);
+    jpeg_save_markers(&cinfo, JPEG_APP0 + 1, 0xFFFF);
+    jpeg_save_markers(&cinfo, JPEG_APP0 + 13, 0xFFFF);
+    retval = jpeg_read_header(&cinfo, TRUE);
+    if (retval != JPEG_HEADER_OK) {
+        jpeg_destroy_decompress(&cinfo);
+        return GD_META_ERR_PARSE;
+    }
+    retval = gdJpegCollectMetadata(&cinfo, metadata);
+    jpeg_destroy_decompress(&cinfo);
+    return retval;
+}
+
+BGD_DECLARE(int) gdJpegGetMetadataCtx(gdIOCtxPtr infile, gdImageMetadata *metadata)
+{
+    return gdJpegReadMetadataCtx(infile, metadata) == GD_META_OK ? 0 : 1;
+}
+
+BGD_DECLARE(int) gdJpegGetMetadata(FILE *infile, gdImageMetadata *metadata)
+{
+    gdIOCtx *in;
+    int result;
+    in = gdNewFileCtx(infile);
+    if (in == NULL) {
+        return 1;
+    }
+    result = gdJpegGetMetadataCtx(in, metadata);
+    in->gd_free(in);
+    return result;
+}
+
+BGD_DECLARE(int) gdJpegGetMetadataPtr(int size, const void *data, gdImageMetadata *metadata)
+{
+    gdIOCtx *in;
+    int result;
+    if (size <= 0 || data == NULL) {
+        return 1;
+    }
+    in = gdNewDynamicCtxEx(size, (void *)data, 0);
+    if (in == NULL) {
+        return 1;
+    }
+    result = gdJpegGetMetadataCtx(in, metadata);
+    in->gd_free(in);
+    return result;
 }
 
 BGD_DECLARE(gdImagePtr) gdImageCreateFromJpegCtx(gdIOCtx *infile)
@@ -995,36 +949,23 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromJpegCtx(gdIOCtx *infile)
 }
 
 BGD_DECLARE(gdImagePtr)
-gdImageCreateFromJpegCtxWithMetadata(gdIOCtx *infile, gdImageMetadata *metadata)
-{
-    return gdImageCreateFromJpegCtxExWithMetadata(infile, 1, metadata);
-}
-
-BGD_DECLARE(gdImagePtr)
 gdImageCreateFromJpegCtxEx(gdIOCtx *infile, int ignore_warning)
-{
-    return gdImageCreateFromJpegCtxExWithMetadata(infile, ignore_warning, NULL);
-}
-
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromJpegCtxExWithMetadata(gdIOCtx *infile, int ignore_warning,
-                                       gdImageMetadata *metadata)
 {
     gdJpegReadOptions options;
 
     gdJpegReadOptionsInit(&options);
     options.ignore_warning = ignore_warning;
-    return gdImageCreateFromJpegCtxWithOptionsAndMetadata(infile, &options, metadata);
+    return gdImageCreateFromJpegCtxWithOptions(infile, &options);
 }
 
 BGD_DECLARE(gdImagePtr)
 gdImageCreateFromJpegCtxWithOptions(gdIOCtx *infile, const gdJpegReadOptions *options)
 {
-    return gdImageCreateFromJpegCtxWithOptionsAndMetadata(infile, options, NULL);
+    return gdImageCreateFromJpegCtxWithOptionsInternal(infile, options);
 }
 
-static gdImagePtr gdImageCreateFromJpegCtxWithOptionsAndMetadata(
-    gdIOCtx *infile, const gdJpegReadOptions *options, gdImageMetadata *metadata)
+static gdImagePtr gdImageCreateFromJpegCtxWithOptionsInternal(
+    gdIOCtx *infile, const gdJpegReadOptions *options)
 {
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
@@ -1085,23 +1026,12 @@ static gdImagePtr gdImageCreateFromJpegCtxWithOptionsAndMetadata(
      * files with inverted components.
      */
     jpeg_save_markers(&cinfo, JPEG_APP0 + 14, 256);
-    if (metadata != NULL) {
-        jpeg_save_markers(&cinfo, JPEG_APP0 + 1, 0xFFFF);
-        jpeg_save_markers(&cinfo, JPEG_APP0 + 2, 0xFFFF);
-        jpeg_save_markers(&cinfo, JPEG_APP0 + 13, 0xFFFF);
-    }
 
     retval = jpeg_read_header(&cinfo, TRUE);
     if (retval != JPEG_HEADER_OK) {
         gd_error("gd-jpeg: warning: jpeg_read_header returns"
                  " %d, expected %d\n",
                  retval, JPEG_HEADER_OK);
-    }
-
-    retval = gdJpegCollectMetadata(&cinfo, metadata);
-    if (retval != GD_META_OK) {
-        gd_error("gd-jpeg: error: unable to read metadata\n");
-        goto error;
     }
 
     if (cinfo.image_height > INT_MAX) {
@@ -1762,6 +1692,31 @@ BGD_DECLARE(int) gdJpegGetInfoPtr(int size, const void *data, gdJpegInfo *info)
     return 1;
 }
 
+BGD_DECLARE(int) gdJpegGetMetadata(FILE *infile, gdImageMetadata *metadata)
+{
+    ARG_NOT_USED(infile);
+    ARG_NOT_USED(metadata);
+    _noJpegError();
+    return 1;
+}
+
+BGD_DECLARE(int) gdJpegGetMetadataCtx(gdIOCtxPtr infile, gdImageMetadata *metadata)
+{
+    ARG_NOT_USED(infile);
+    ARG_NOT_USED(metadata);
+    _noJpegError();
+    return 1;
+}
+
+BGD_DECLARE(int) gdJpegGetMetadataPtr(int size, const void *data, gdImageMetadata *metadata)
+{
+    ARG_NOT_USED(size);
+    ARG_NOT_USED(data);
+    ARG_NOT_USED(metadata);
+    _noJpegError();
+    return 1;
+}
+
 BGD_DECLARE(void) gdImageJpeg(gdImagePtr im, FILE *outFile, int quality)
 {
     ARG_NOT_USED(im);
@@ -1779,44 +1734,11 @@ BGD_DECLARE(void *) gdImageJpegPtr(gdImagePtr im, int *size, int quality)
     return NULL;
 }
 
-BGD_DECLARE(void *)
-gdImageJpegPtrWithMetadata(gdImagePtr im, int *size, int quality, const gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(im);
-    ARG_NOT_USED(size);
-    ARG_NOT_USED(quality);
-    ARG_NOT_USED(metadata);
-    _noJpegError();
-    return NULL;
-}
-
-void *gdImageJpegPtrWithMetadataNoSubsampling(gdImagePtr im, int *size, int quality,
-                                              const gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(im);
-    ARG_NOT_USED(size);
-    ARG_NOT_USED(quality);
-    ARG_NOT_USED(metadata);
-    _noJpegError();
-    return NULL;
-}
-
 BGD_DECLARE(void) gdImageJpegCtx(gdImagePtr im, gdIOCtx *outfile, int quality)
 {
     ARG_NOT_USED(im);
     ARG_NOT_USED(outfile);
     ARG_NOT_USED(quality);
-    _noJpegError();
-}
-
-BGD_DECLARE(void)
-gdImageJpegCtxWithMetadata(gdImagePtr im, gdIOCtx *outfile, int quality,
-                           const gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(im);
-    ARG_NOT_USED(outfile);
-    ARG_NOT_USED(quality);
-    ARG_NOT_USED(metadata);
     _noJpegError();
 }
 
@@ -1894,28 +1816,6 @@ gdImageCreateFromJpegPtrWithOptions(int size, void *data, const gdJpegReadOption
     return NULL;
 }
 
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromJpegPtrWithMetadata(int size, void *data, gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(size);
-    ARG_NOT_USED(data);
-    ARG_NOT_USED(metadata);
-    _noJpegError();
-    return NULL;
-}
-
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromJpegPtrExWithMetadata(int size, void *data, int ignore_warning,
-                                       gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(size);
-    ARG_NOT_USED(data);
-    ARG_NOT_USED(ignore_warning);
-    ARG_NOT_USED(metadata);
-    _noJpegError();
-    return NULL;
-}
-
 BGD_DECLARE(gdImagePtr) gdImageCreateFromJpegCtx(gdIOCtx *infile)
 {
     ARG_NOT_USED(infile);
@@ -1937,26 +1837,6 @@ gdImageCreateFromJpegCtxWithOptions(gdIOCtx *infile, const gdJpegReadOptions *op
 {
     ARG_NOT_USED(infile);
     ARG_NOT_USED(options);
-    _noJpegError();
-    return NULL;
-}
-
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromJpegCtxWithMetadata(gdIOCtx *infile, gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(infile);
-    ARG_NOT_USED(metadata);
-    _noJpegError();
-    return NULL;
-}
-
-BGD_DECLARE(gdImagePtr)
-gdImageCreateFromJpegCtxExWithMetadata(gdIOCtx *infile, int ignore_warning,
-                                       gdImageMetadata *metadata)
-{
-    ARG_NOT_USED(infile);
-    ARG_NOT_USED(ignore_warning);
-    ARG_NOT_USED(metadata);
     _noJpegError();
     return NULL;
 }

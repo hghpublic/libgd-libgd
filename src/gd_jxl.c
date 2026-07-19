@@ -358,18 +358,80 @@ decode_fail:
 
 /* ---- Still-image encode ---- */
 
-static int _gdImageJxlCtxEx(gdImagePtr im, gdIOCtx *outfile, int lossless, float distance,
-                            int effort)
+static int JxlEncoderAddMetadata(JxlEncoder *enc, const gdImageMetadata *metadata)
+{
+    size_t i;
+    if (metadata == NULL) {
+        return 1;
+    }
+
+    for (i = 0; i < gdImageMetadataGetProfileCount(metadata); i++) {
+        const char *key;
+        const unsigned char *data;
+        size_t size;
+        JxlBoxType type;
+        uint8_t *exif = NULL;
+        const uint8_t *contents;
+        size_t contents_size;
+
+        if (gdImageMetadataGetProfileAt(metadata, i, &key, &data, &size) != GD_META_OK) {
+            continue;
+        }
+        if (strcmp(key, "exif") == 0) {
+            if (size > SIZE_MAX - 4) {
+                return 0;
+            }
+            exif = gdMalloc(size + 4);
+            if (exif == NULL) {
+                return 0;
+            }
+            exif[0] = 0;
+            exif[1] = 0;
+            exif[2] = 0;
+            exif[3] = 0;
+            memcpy(exif + 4, data, size);
+            memcpy(type, "Exif", 4);
+            contents = exif;
+            contents_size = size + 4;
+        } else if (strcmp(key, "xmp") == 0) {
+            memcpy(type, "xml ", 4);
+            contents = data;
+            contents_size = size;
+        } else {
+            continue;
+        }
+
+        if (JxlEncoderAddBox(enc, type, contents, contents_size, JXL_FALSE) != JXL_ENC_SUCCESS) {
+            gdFree(exif);
+            return 0;
+        }
+        gdFree(exif);
+    }
+
+    return 1;
+}
+
+static int _gdImageJxlCtxWithOptions(gdImagePtr im, gdIOCtx *outfile,
+                                     const gdJxlWriteOptions *options)
 {
     JxlEncoder *enc = NULL;
     JxlEncoderFrameSettings *frame_opts = NULL;
     uint8_t *pixels = NULL;
+    uint8_t *frame_pixels = NULL;
     int has_alpha = 0;
     uint8_t outbuf[65536];
     int w, h;
     int ret = 1;
+    gdJxlWriteOptions defaults;
 
-    if (im == NULL) {
+    gdJxlWriteOptionsInit(&defaults);
+    if (options == NULL) {
+        options = &defaults;
+    }
+
+    if (im == NULL || outfile == NULL || gdImageSX(im) <= 0 || gdImageSY(im) <= 0 ||
+            options->distance < 0.0f || options->distance > 25.0f ||
+            options->effort < 1 || options->effort > 9) {
         return 1;
     }
 
@@ -389,6 +451,14 @@ static int _gdImageJxlCtxEx(gdImagePtr im, gdIOCtx *outfile, int lossless, float
         return 1;
     }
 
+    if (options->metadata != NULL) {
+        if (JxlEncoderUseContainer(enc, JXL_TRUE) != JXL_ENC_SUCCESS ||
+                JxlEncoderUseBoxes(enc) != JXL_ENC_SUCCESS) {
+            gd_error("gdImageJxl: failed to enable container metadata");
+            goto encode_fail;
+        }
+    }
+
     /* Set basic info */
     JxlBasicInfo info;
     JxlEncoderInitBasicInfo(&info);
@@ -401,7 +471,7 @@ static int _gdImageJxlCtxEx(gdImagePtr im, gdIOCtx *outfile, int lossless, float
     info.alpha_bits = has_alpha ? 8 : 0;
     info.alpha_exponent_bits = 0;
     info.alpha_premultiplied = JXL_FALSE;
-    info.uses_original_profile = lossless ? JXL_TRUE : JXL_FALSE;
+    info.uses_original_profile = options->lossless ? JXL_TRUE : JXL_FALSE;
 
     if (JxlEncoderSetBasicInfo(enc, &info) != JXL_ENC_SUCCESS) {
         gd_error("gdImageJxl: JxlEncoderSetBasicInfo failed");
@@ -423,32 +493,37 @@ static int _gdImageJxlCtxEx(gdImagePtr im, gdIOCtx *outfile, int lossless, float
         goto encode_fail;
     }
 
-    if (lossless) {
+    if (options->lossless) {
         if (JxlEncoderSetFrameLossless(frame_opts, JXL_TRUE) != JXL_ENC_SUCCESS) {
             gd_error("gdImageJxl: JxlEncoderSetFrameLossless failed");
             goto encode_fail;
         }
     } else {
-        if (JxlEncoderSetFrameDistance(frame_opts, distance) != JXL_ENC_SUCCESS) {
+        if (JxlEncoderSetFrameDistance(frame_opts, options->distance) != JXL_ENC_SUCCESS) {
             gd_error("gdImageJxl: JxlEncoderSetFrameDistance failed");
             goto encode_fail;
         }
     }
 
-    if (JxlEncoderFrameSettingsSetOption(frame_opts, JXL_ENC_FRAME_SETTING_EFFORT, effort) !=
+    if (JxlEncoderFrameSettingsSetOption(frame_opts, JXL_ENC_FRAME_SETTING_EFFORT, options->effort) !=
         JXL_ENC_SUCCESS) {
         gd_error("gdImageJxl: JxlEncoderFrameSettingsSetOption effort failed");
         goto encode_fail;
     }
 
+    if (options->metadata != NULL && !JxlEncoderAddMetadata(enc, options->metadata)) {
+        gd_error("gdImageJxl: failed to add metadata");
+        goto encode_fail;
+    }
+
     /* Add image frame */
-    uint8_t *frame_pixels = pixels;
     size_t frame_pixels_size = (size_t)w * (size_t)h * 4;
     JxlPixelFormat fmt = {.num_channels = has_alpha ? 4u : 3u,
                           .data_type = JXL_TYPE_UINT8,
                           .endianness = JXL_NATIVE_ENDIAN,
                           .align = 0};
 
+    frame_pixels = pixels;
     if (!has_alpha) {
         frame_pixels = JxlRGBFromRGBA(pixels, w, h);
         if (frame_pixels == NULL) {
@@ -461,12 +536,8 @@ static int _gdImageJxlCtxEx(gdImagePtr im, gdIOCtx *outfile, int lossless, float
     if (JxlEncoderAddImageFrame(frame_opts, &fmt, frame_pixels, frame_pixels_size) !=
         JXL_ENC_SUCCESS) {
         gd_error("gdImageJxl: JxlEncoderAddImageFrame failed");
-        if (frame_pixels != pixels)
-            gdFree(frame_pixels);
         goto encode_fail;
     }
-    if (frame_pixels != pixels)
-        gdFree(frame_pixels);
 
     JxlEncoderCloseInput(enc);
     for (;;) {
@@ -496,6 +567,8 @@ encode_fail:
     // frame_opts is owned by enc, so no separate destroy needed
     if (enc)
         JxlEncoderDestroy(enc);
+    if (frame_pixels != NULL && frame_pixels != pixels)
+        gdFree(frame_pixels);
     if (pixels)
         gdFree(pixels);
     return ret;
@@ -507,7 +580,7 @@ BGD_DECLARE(void) gdImageJxl(gdImagePtr im, FILE *outFile)
     if (out == NULL) {
         return;
     }
-    _gdImageJxlCtxEx(im, out, 0, 1.0f, 7);
+    _gdImageJxlCtxWithOptions(im, out, NULL);
     out->gd_free(out);
 }
 
@@ -518,7 +591,12 @@ gdImageJxlEx(gdImagePtr im, FILE *outFile, int lossless, float distance, int eff
     if (out == NULL) {
         return;
     }
-    _gdImageJxlCtxEx(im, out, lossless, distance, effort);
+    gdJxlWriteOptions options;
+    gdJxlWriteOptionsInit(&options);
+    options.lossless = lossless;
+    options.distance = distance;
+    options.effort = effort;
+    _gdImageJxlCtxWithOptions(im, out, &options);
     out->gd_free(out);
 }
 
@@ -529,7 +607,7 @@ BGD_DECLARE(void *) gdImageJxlPtr(gdImagePtr im, int *size)
     if (out == NULL) {
         return NULL;
     }
-    if (_gdImageJxlCtxEx(im, out, 0, 1.0f, 7)) {
+    if (_gdImageJxlCtxWithOptions(im, out, NULL)) {
         rv = NULL;
     } else {
         rv = gdDPExtractData(out, size);
@@ -546,7 +624,12 @@ gdImageJxlPtrEx(gdImagePtr im, int *size, int lossless, float distance, int effo
     if (out == NULL) {
         return NULL;
     }
-    if (_gdImageJxlCtxEx(im, out, lossless, distance, effort)) {
+    gdJxlWriteOptions options;
+    gdJxlWriteOptionsInit(&options);
+    options.lossless = lossless;
+    options.distance = distance;
+    options.effort = effort;
+    if (_gdImageJxlCtxWithOptions(im, out, &options)) {
         rv = NULL;
     } else {
         rv = gdDPExtractData(out, size);
@@ -557,13 +640,59 @@ gdImageJxlPtrEx(gdImagePtr im, int *size, int lossless, float distance, int effo
 
 BGD_DECLARE(void) gdImageJxlCtx(gdImagePtr im, gdIOCtxPtr outfile)
 {
-    _gdImageJxlCtxEx(im, outfile, 0, 1.0f, 7);
+    _gdImageJxlCtxWithOptions(im, outfile, NULL);
 }
 
 BGD_DECLARE(void)
 gdImageJxlCtxEx(gdImagePtr im, gdIOCtxPtr outfile, int lossless, float distance, int effort)
 {
-    _gdImageJxlCtxEx(im, outfile, lossless, distance, effort);
+    gdJxlWriteOptions options;
+    gdJxlWriteOptionsInit(&options);
+    options.lossless = lossless;
+    options.distance = distance;
+    options.effort = effort;
+    _gdImageJxlCtxWithOptions(im, outfile, &options);
+}
+
+BGD_DECLARE(int)
+gdImageJxlWithOptions(gdImagePtr im, FILE *outFile, const gdJxlWriteOptions *options)
+{
+    gdIOCtx *out;
+    int result;
+
+    if (outFile == NULL || (out = gdNewFileCtx(outFile)) == NULL) {
+        return 0;
+    }
+    result = gdImageJxlCtxWithOptions(im, out, options);
+    out->gd_free(out);
+    return result;
+}
+
+BGD_DECLARE(int)
+gdImageJxlCtxWithOptions(gdImagePtr im, gdIOCtxPtr outfile, const gdJxlWriteOptions *options)
+{
+    return _gdImageJxlCtxWithOptions(im, outfile, options) == 0;
+}
+
+BGD_DECLARE(void *)
+gdImageJxlPtrWithOptions(gdImagePtr im, int *size, const gdJxlWriteOptions *options)
+{
+    void *result;
+    gdIOCtx *out = gdNewDynamicCtx(2048, NULL);
+
+    if (size != NULL) {
+        *size = 0;
+    }
+    if (out == NULL) {
+        return NULL;
+    }
+    if (_gdImageJxlCtxWithOptions(im, out, options) != 0) {
+        result = NULL;
+    } else {
+        result = gdDPExtractData(out, size);
+    }
+    out->gd_free(out);
+    return result;
 }
 
 /* ---- Multi-image structures ---- */
@@ -572,7 +701,7 @@ typedef struct gdJxlWrite {
     JxlEncoder *enc;
     JxlEncoderFrameSettings *frame_opts;
     gdIOCtxPtr ctx;
-    gdJxlWriteOptions options;
+    gdJxlAnimWriteOptions options;
     uint32_t width;
     uint32_t height;
     int has_alpha;
@@ -581,6 +710,9 @@ typedef struct gdJxlWrite {
     int finalized;
     int timestamp;
     int frameCount;
+    uint8_t **framePixels;
+    int framePixelsCount;
+    int framePixelsCapacity;
 } gdJxlWrite;
 
 typedef struct gdJxlRead {
@@ -603,6 +735,16 @@ BGD_DECLARE(void) gdJxlReadOptionsInit(gdJxlReadOptions *options)
 }
 
 BGD_DECLARE(void) gdJxlWriteOptionsInit(gdJxlWriteOptions *options)
+{
+    if (options == NULL) {
+        return;
+    }
+    memset(options, 0, sizeof(*options));
+    options->distance = 1.0f;
+    options->effort = 7;
+}
+
+BGD_DECLARE(void) gdJxlAnimWriteOptionsInit(gdJxlAnimWriteOptions *options)
 {
     if (options == NULL) {
         return;
@@ -640,11 +782,11 @@ static int JxlWriteDrainEncoder(gdJxlWrite *writer)
     }
 }
 
-static int JxlWriteNormalizeOptions(const gdJxlWriteOptions *options, gdJxlWriteOptions *normalized)
+static int JxlWriteNormalizeOptions(const gdJxlAnimWriteOptions *options, gdJxlAnimWriteOptions *normalized)
 {
-    gdJxlWriteOptions defaults;
+    gdJxlAnimWriteOptions defaults;
 
-    gdJxlWriteOptionsInit(&defaults);
+    gdJxlAnimWriteOptionsInit(&defaults);
     *normalized = defaults;
     if (options == NULL) {
         return 1;
@@ -663,7 +805,7 @@ static int JxlWriteEnsureEncoder(gdJxlWrite *writer, gdImagePtr image)
 {
     JxlBasicInfo info;
     int width, height;
-    const gdJxlWriteOptions *options;
+    const gdJxlAnimWriteOptions *options;
 
     if (writer == NULL || image == NULL || writer->ctx == NULL) {
         return 0;
@@ -752,7 +894,26 @@ fail:
     return 0;
 }
 
-BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpen(FILE *outFile, const gdJxlWriteOptions *options)
+static int JxlWriteEnsureFramePixelCapacity(gdJxlWrite *writer)
+{
+    uint8_t **framePixels;
+    int capacity;
+
+    if (writer->framePixelsCount < writer->framePixelsCapacity) {
+        return 1;
+    }
+
+    capacity = writer->framePixelsCapacity == 0 ? 4 : writer->framePixelsCapacity * 2;
+    framePixels = (uint8_t **)gdRealloc(writer->framePixels, (size_t)capacity * sizeof(uint8_t *));
+    if (framePixels == NULL) {
+        return 0;
+    }
+    writer->framePixels = framePixels;
+    writer->framePixelsCapacity = capacity;
+    return 1;
+}
+
+BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpen(FILE *outFile, const gdJxlAnimWriteOptions *options)
 {
     gdIOCtx *out;
     gdJxlWritePtr writer;
@@ -773,9 +934,9 @@ BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpen(FILE *outFile, const gdJxlWriteOptions
     return writer;
 }
 
-BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenCtx(gdIOCtxPtr outCtx, const gdJxlWriteOptions *options)
+BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenCtx(gdIOCtxPtr outCtx, const gdJxlAnimWriteOptions *options)
 {
-    gdJxlWriteOptions normalized;
+    gdJxlAnimWriteOptions normalized;
     gdJxlWritePtr writer;
 
     if (outCtx == NULL || !JxlWriteNormalizeOptions(options, &normalized)) {
@@ -790,7 +951,7 @@ BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenCtx(gdIOCtxPtr outCtx, const gdJxlWrite
     return writer;
 }
 
-BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenPtr(const gdJxlWriteOptions *options)
+BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenPtr(const gdJxlAnimWriteOptions *options)
 {
     gdIOCtx *out;
     gdJxlWritePtr writer;
@@ -847,6 +1008,12 @@ BGD_DECLARE(int) gdJxlWriteAddImage(gdJxlWritePtr writer, gdImagePtr image, int 
         writer->has_alpha = 1;
     }
 
+    if (!JxlWriteEnsureFramePixelCapacity(writer)) {
+        gd_error("gd-jxl write: frame buffer ownership failed");
+        gdFree(pixels);
+        return 0;
+    }
+
     JxlEncoderInitFrameHeader(&fhdr);
     fhdr.duration = (uint32_t)delay_ms; /* ticks == ms */
 
@@ -868,8 +1035,7 @@ BGD_DECLARE(int) gdJxlWriteAddImage(gdJxlWritePtr writer, gdImagePtr image, int 
         return 0;
     }
 
-    gdFree(pixels);
-    pixels = NULL;
+    writer->framePixels[writer->framePixelsCount++] = pixels;
 
     writer->timestamp += delay_ms;
     writer->frameCount++;
@@ -892,12 +1058,18 @@ static int JxlWriteFinish(gdJxlWritePtr writer)
 
 static void JxlWriteFree(gdJxlWritePtr writer)
 {
+    int i;
+
     if (writer == NULL) {
         return;
     }
     if (writer->enc) {
         JxlEncoderDestroy(writer->enc);
     }
+    for (i = 0; i < writer->framePixelsCount; i++) {
+        gdFree(writer->framePixels[i]);
+    }
+    gdFree(writer->framePixels);
     if (writer->ownsCtx && writer->ctx) {
         writer->ctx->gd_free(writer->ctx);
     }
@@ -1090,6 +1262,134 @@ BGD_DECLARE(int) gdJxlReadGetInfo(gdJxlReadPtr reader, gdJxlInfo *info)
     info->animated = reader->info.have_animation == JXL_TRUE;
     info->loop_count = info->animated ? (int)reader->info.animation.num_loops : 0;
     return 1;
+}
+
+BGD_DECLARE(int) gdJxlReadGetMetadata(gdJxlReadPtr reader, gdImageMetadata *metadata)
+{
+    JxlDecoder *dec = NULL;
+    int result = GD_META_OK;
+    size_t max_profile_size = 0;
+
+    if (reader == NULL || metadata == NULL) {
+        return GD_META_ERR_INVALID;
+    }
+    gdImageMetadataGetLimits(metadata, &max_profile_size, NULL);
+
+    dec = JxlDecoderCreate(NULL);
+    if (dec == NULL) {
+        return GD_META_ERR_NOMEM;
+    }
+    if (JxlDecoderSubscribeEvents(dec, JXL_DEC_BOX) != JXL_DEC_SUCCESS ||
+            JxlDecoderSetDecompressBoxes(dec, JXL_TRUE) != JXL_DEC_SUCCESS) {
+        result = GD_META_ERR_UNSUPPORTED;
+        goto metadata_done;
+    }
+    JxlDecoderSetInput(dec, reader->buf, reader->buf_len);
+    JxlDecoderCloseInput(dec);
+
+    for (;;) {
+        JxlDecoderStatus status = JxlDecoderProcessInput(dec);
+
+        if (status == JXL_DEC_BOX) {
+            JxlBoxType type;
+            uint8_t *buffer = NULL;
+            size_t capacity = 65536;
+            size_t used = 0;
+            size_t released;
+
+            if (capacity > max_profile_size) {
+                capacity = max_profile_size;
+            }
+            if (capacity == 0) {
+                result = GD_META_ERR_LIMIT;
+                goto metadata_done;
+            }
+
+            if (JxlDecoderGetBoxType(dec, type, JXL_TRUE) != JXL_DEC_SUCCESS) {
+                result = GD_META_ERR_FORMAT;
+                goto metadata_done;
+            }
+            if (memcmp(type, "Exif", 4) != 0 && memcmp(type, "xml ", 4) != 0) {
+                continue;
+            }
+
+            buffer = gdMalloc(capacity);
+            if (buffer == NULL) {
+                result = GD_META_ERR_NOMEM;
+                goto metadata_done;
+            }
+            for (;;) {
+                if (JxlDecoderSetBoxBuffer(dec, buffer + used, capacity - used) != JXL_DEC_SUCCESS) {
+                    result = GD_META_ERR_FORMAT;
+                    gdFree(buffer);
+                    goto metadata_done;
+                }
+                status = JxlDecoderProcessInput(dec);
+                released = JxlDecoderReleaseBoxBuffer(dec);
+                used += capacity - used - released;
+                if (status == JXL_DEC_BOX_NEED_MORE_OUTPUT) {
+                    uint8_t *grown;
+                    if (capacity >= max_profile_size || capacity > SIZE_MAX / 2) {
+                        result = GD_META_ERR_LIMIT;
+                        gdFree(buffer);
+                        goto metadata_done;
+                    }
+                    capacity *= 2;
+                    if (capacity > max_profile_size) {
+                        capacity = max_profile_size;
+                    }
+                    grown = gdRealloc(buffer, capacity);
+                    if (grown == NULL) {
+                        result = GD_META_ERR_NOMEM;
+                        gdFree(buffer);
+                        goto metadata_done;
+                    }
+                    buffer = grown;
+                    continue;
+                }
+                if (status != JXL_DEC_BOX_COMPLETE && status != JXL_DEC_BOX && status != JXL_DEC_SUCCESS) {
+                    result = GD_META_ERR_FORMAT;
+                    gdFree(buffer);
+                    goto metadata_done;
+                }
+                break;
+            }
+
+            if (memcmp(type, "Exif", 4) == 0) {
+                size_t offset;
+                if (used < 4) {
+                    result = GD_META_ERR_FORMAT;
+                    gdFree(buffer);
+                    goto metadata_done;
+                }
+                offset = ((size_t)buffer[0] << 24) | ((size_t)buffer[1] << 16) |
+                    ((size_t)buffer[2] << 8) | (size_t)buffer[3];
+                if (offset > used - 4 || gdImageMetadataSetProfile(metadata, "exif", buffer + 4 + offset,
+                        used - 4 - offset) != GD_META_OK) {
+                    result = GD_META_ERR_FORMAT;
+                    gdFree(buffer);
+                    goto metadata_done;
+                }
+            } else if (gdImageMetadataSetProfile(metadata, "xmp", buffer, used) != GD_META_OK) {
+                result = GD_META_ERR_FORMAT;
+                gdFree(buffer);
+                goto metadata_done;
+            }
+            gdFree(buffer);
+            continue;
+        }
+        if (status == JXL_DEC_SUCCESS) {
+            break;
+        }
+        if (status == JXL_DEC_ERROR) {
+            result = GD_META_ERR_FORMAT;
+            break;
+        }
+    }
+
+metadata_done:
+    JxlDecoderDestroy(dec);
+    return result;
 }
 
 /* Helper: build gdImagePtr from current decoder state */
@@ -1395,6 +1695,16 @@ BGD_DECLARE(void) gdJxlWriteOptionsInit(gdJxlWriteOptions *options)
     options->effort = 7;
 }
 
+BGD_DECLARE(void) gdJxlAnimWriteOptionsInit(gdJxlAnimWriteOptions *options)
+{
+    if (options == NULL) {
+        return;
+    }
+    memset(options, 0, sizeof(*options));
+    options->distance = 1.0f;
+    options->effort = 7;
+}
+
 BGD_DECLARE(gdImagePtr) gdImageCreateFromJxl(FILE *inFile)
 {
     ARG_NOT_USED(inFile);
@@ -1422,6 +1732,44 @@ BGD_DECLARE(void) gdImageJxl(gdImagePtr im, FILE *outFile)
     ARG_NOT_USED(im);
     ARG_NOT_USED(outFile);
     _noJxlError();
+}
+
+BGD_DECLARE(int)
+gdImageJxlWithOptions(gdImagePtr im, FILE *outFile, const gdJxlWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(outFile);
+    ARG_NOT_USED(options);
+    _noJxlError();
+    return 0;
+}
+
+BGD_DECLARE(int) gdJxlReadGetMetadata(gdJxlReadPtr reader, gdImageMetadata *metadata)
+{
+    ARG_NOT_USED(reader);
+    ARG_NOT_USED(metadata);
+    _noJxlError();
+    return GD_META_ERR_UNSUPPORTED;
+}
+
+BGD_DECLARE(int)
+gdImageJxlCtxWithOptions(gdImagePtr im, gdIOCtxPtr outfile, const gdJxlWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(outfile);
+    ARG_NOT_USED(options);
+    _noJxlError();
+    return 0;
+}
+
+BGD_DECLARE(void *)
+gdImageJxlPtrWithOptions(gdImagePtr im, int *size, const gdJxlWriteOptions *options)
+{
+    ARG_NOT_USED(im);
+    ARG_NOT_USED(size);
+    ARG_NOT_USED(options);
+    _noJxlError();
+    return NULL;
 }
 
 BGD_DECLARE(void)
@@ -1538,7 +1886,7 @@ BGD_DECLARE(void) gdJxlReadClose(gdJxlReadPtr reader)
     _noJxlError();
 }
 
-BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpen(FILE *outFile, const gdJxlWriteOptions *options)
+BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpen(FILE *outFile, const gdJxlAnimWriteOptions *options)
 {
     ARG_NOT_USED(outFile);
     ARG_NOT_USED(options);
@@ -1546,7 +1894,7 @@ BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpen(FILE *outFile, const gdJxlWriteOptions
     return NULL;
 }
 
-BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenCtx(gdIOCtxPtr outCtx, const gdJxlWriteOptions *options)
+BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenCtx(gdIOCtxPtr outCtx, const gdJxlAnimWriteOptions *options)
 {
     ARG_NOT_USED(outCtx);
     ARG_NOT_USED(options);
@@ -1554,7 +1902,7 @@ BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenCtx(gdIOCtxPtr outCtx, const gdJxlWrite
     return NULL;
 }
 
-BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenPtr(const gdJxlWriteOptions *options)
+BGD_DECLARE(gdJxlWritePtr) gdJxlWriteOpenPtr(const gdJxlAnimWriteOptions *options)
 {
     ARG_NOT_USED(options);
     _noJxlError();

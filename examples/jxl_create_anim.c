@@ -222,10 +222,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    gdJxlWriteOptions options;
+    gdJxlAnimWriteOptions options;
     gdJxlWritePtr writer;
 
-    gdJxlWriteOptionsInit(&options);
+    gdJxlAnimWriteOptionsInit(&options);
     options.canvasWidth = WIDTH;
     options.canvasHeight = HEIGHT;
     options.lossless = lossless;

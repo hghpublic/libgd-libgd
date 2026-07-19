@@ -8,7 +8,7 @@ int main(int argc, char **argv)
     gdWebpWritePtr writer;
     gdWebpInfo info;
     gdWebpFrameInfo frameInfo;
-    gdWebpWriteOptions options;
+    gdWebpAnimWriteOptions options;
     gdImagePtr image;
     int result;
 
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    gdWebpWriteOptionsInit(&options);
+    gdWebpAnimWriteOptionsInit(&options);
     options.canvasWidth = info.width;
     options.canvasHeight = info.height;
     options.loopCount = info.loopCount;
