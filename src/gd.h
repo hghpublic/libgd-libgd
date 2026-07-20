@@ -2703,14 +2703,50 @@ typedef struct {
     const gdImageMetadata *metadata;      /**< Optional EXIF/XMP metadata. */
 } gdJxlWriteOptions;
 
+/**
+ * @brief Initialize JPEG XL still-image write options with gd defaults.
+ * 
+ * @param options Pointer to the write options structure to initialize.
+ */
 BGD_DECLARE(void) gdJxlWriteOptionsInit(gdJxlWriteOptions *options);
 
+/**
+ * @brief Write an image as JPEG XL data to a stdio file with write options.
+ *
+ * @param im The image to write.
+ * @param outFile Pointer to the output FILE stream.
+ * @param options Pointer to the JPEG XL write options.
+ *
+ * @return Returns non-zero on success, or zero on failure.
+ */
 BGD_DECLARE(int)
 gdImageJxlWithOptions(gdImagePtr im, FILE *outFile, const gdJxlWriteOptions *options);
 
+/**
+ * @brief Write an image as JPEG XL data to a gdIOCtx with write options.
+ *
+ * @param im The image to write.
+ * @param outfile Pointer to the gdIOCtx output context.
+ * @param options Pointer to the JPEG XL write options.
+ *
+ * @return Returns non-zero on success, or zero on failure.
+ */
 BGD_DECLARE(int)
 gdImageJxlCtxWithOptions(gdImagePtr im, gdIOCtxPtr outfile, const gdJxlWriteOptions *options);
 
+/**
+ * @brief Write an image as JPEG XL data to a newly allocated memory buffer with write options.
+ * 
+ * The image is borrowed for the duration of the call; palette images may be
+ * converted to truecolor internally. The returned buffer is caller-owned and
+ * must be freed with gdFree().
+ * 
+ * @param im The image to write.
+ * @param size Pointer to an integer that receives the returned buffer size.
+ * @param options Pointer to the JPEG XL write options.
+ *
+ * @return Returns a pointer to the newly allocated memory buffer, or NULL on failure.
+ */
 BGD_DECLARE(void *)
 gdImageJxlPtrWithOptions(gdImagePtr im, int *size, const gdJxlWriteOptions *options);
 
@@ -3470,16 +3506,38 @@ typedef struct {
     gdImageMetadata *metadata; /**< Pointer to the image metadata. */
 } gdAvifInfo;
 
-/** @brief Initialize AVIF information and clear the metadata pointer. */
+/** @brief Initialize AVIF information and clear the metadata pointer.
+ * 
+ * @param info Pointer to the gdAvifInfo structure to initialize.
+ */
 BGD_DECLARE(void) gdAvifInfoInit(gdAvifInfo *info);
 
-/** @brief Read AVIF information from a stdio stream without closing it. */
+/** @brief Read AVIF information from a stdio stream without closing it. *
+ * 
+ * @param inFile Pointer to the input FILE stream.
+ * @param info Pointer to the gdAvifInfo structure to populate.
+ * 
+ * @return Returns 1 on success, or 0 on failure.
+ */
 BGD_DECLARE(int) gdAvifGetInfo(FILE *inFile, gdAvifInfo *info);
 
-/** @brief Read AVIF information from a gdIOCtx without closing it. */
+/** @brief Read AVIF information from a gdIOCtx without closing it.
+ * 
+ * @param in Pointer to the gdIOCtx input context.
+ * @param info Pointer to the gdAvifInfo structure to populate.
+ * 
+ * @return Returns 1 on success, or 0 on failure.
+  */
 BGD_DECLARE(int) gdAvifGetInfoCtx(gdIOCtxPtr in, gdAvifInfo *info);
 
-/** @brief Read AVIF information from memory without taking ownership. */
+/** @brief Read AVIF information from memory without taking ownership. 
+ * 
+ * @param size Size of the AVIF memory buffer in bytes.
+ * @param data Pointer to the AVIF memory buffer.
+ * @param info Pointer to the gdAvifInfo structure to populate.
+ * 
+ * @return Returns 1 on success, or 0 on failure.
+*/
 BGD_DECLARE(int) gdAvifGetInfoPtr(int size, const void *data, gdAvifInfo *info);
 
 /**
@@ -4296,9 +4354,42 @@ typedef struct {
 	unsigned int alpha_mask; /**< Alpha channel mask. */
 } gdBmpInfo;
 
+/**
+ * @brief Initialize a gdBmpInfo structure to default values.
+ * 
+ * @param info Pointer to the gdBmpInfo structure to initialize.
+ */
 BGD_DECLARE(void) gdBmpInfoInit(gdBmpInfo *info);
+
+/**
+ * @brief Read BMP file information from a stdio file.
+ * 
+ * @param infile Pointer to the BMP FILE stream to read.
+ * @param info Pointer to a gdBmpInfo structure to receive the BMP information.
+ * 
+ * @return Returns 1 on success, or 0 on failure.
+ */
 BGD_DECLARE(int) gdBmpGetInfo(FILE *infile, gdBmpInfo *info);
+
+/**
+ * @brief Read BMP file information from a gdIOCtx.
+ * 
+ * @param infile Pointer to the gdIOCtx input context.
+ * @param info Pointer to a gdBmpInfo structure to receive the BMP information.
+ * 
+ * @return Returns 1 on success, or 0 on failure.
+ */
 BGD_DECLARE(int) gdBmpGetInfoCtx(gdIOCtxPtr infile, gdBmpInfo *info);
+
+/**
+ * @brief Read BMP file information from a memory buffer.
+ * 
+ * @param size Size of the BMP memory buffer in bytes.
+ * @param data Pointer to the BMP memory buffer.
+ * @param info Pointer to a gdBmpInfo structure to receive the BMP information.
+ * 
+ * @return Returns 1 on success, or 0 on failure.
+ */
 BGD_DECLARE(int) gdBmpGetInfoPtr(int size, const void *data, gdBmpInfo *info);
 
 /**
