@@ -226,8 +226,8 @@ int main(int argc, char **argv)
     gdJxlWritePtr writer;
 
     gdJxlAnimWriteOptionsInit(&options);
-    options.canvasWidth = WIDTH;
-    options.canvasHeight = HEIGHT;
+    options.canvas_width = WIDTH;
+    options.canvas_height = HEIGHT;
     options.lossless = lossless;
     options.distance = distance;
     options.effort = 7;

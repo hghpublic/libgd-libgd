@@ -706,7 +706,6 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromPng(FILE *fd);
  */
 BGD_DECLARE(gdImagePtr) gdImageCreateFromPngCtx(gdIOCtxPtr in);
 
-
 /**
  * @brief Create an image from a PNG memory buffer.
  *
@@ -1107,7 +1106,6 @@ gdImageQoiCtxWithOptions(gdImagePtr im, gdIOCtxPtr out, const gdQoiWriteOptions 
 BGD_DECLARE(void *)
 gdImageQoiPtrWithOptions(gdImagePtr im, int *size, const gdQoiWriteOptions *options);
 
-
 /**
  * @brief Write an image as QOI data to a newly allocated memory buffer.
  *
@@ -1338,27 +1336,27 @@ typedef struct {
     char version[4];       /**< GIF version, excluding the terminating NUL. */
     int width;            /**< Logical screen width in pixels. */
     int height;           /**< Logical screen height in pixels. */
-    int backgroundIndex;  /**< GIF logical screen background color index. */
-    int globalColorTable; /**< Non-zero if the GIF has a global color table. */
-    int colorResolution;  /**< GIF color resolution in bits per primary color. */
-    double pixelAspectRatio; /**< GIF pixel aspect ratio, or 1.0 when unspecified. */
-    int loopCount;        /**< Netscape loop count, 0 for infinite, or 1 when absent. */
-    int loopCountPresent;  /**< Non-zero if a Netscape loop count was present. */
+    int background_index;      /**< GIF logical screen background color index. */
+    int global_color_table;    /**< Non-zero if the GIF has a global color table. */
+    int color_resolution;      /**< GIF color resolution in bits per primary color. */
+    double pixel_aspect_ratio; /**< GIF pixel aspect ratio, or 1.0 when unspecified. */
+    int loop_count;            /**< Netscape loop count, 0 for infinite, or 1 when absent. */
+    int loop_count_present;    /**< Non-zero if a Netscape loop count was present. */
 } gdGifInfo;
 
 /**
  * @brief Per-frame information read from a GIF animation.
  */
 typedef struct {
-    int frameIndex;       /**< Zero-based frame index. */
+    int frame_index;       /**< Zero-based frame index. */
     int x;                /**< Frame left offset on the logical screen. */
     int y;                /**< Frame top offset on the logical screen. */
     int width;            /**< Frame width in pixels. */
     int height;           /**< Frame height in pixels. */
     int delay;            /**< Frame delay in hundredths of a second. */
     int disposal;         /**< One of the GD_GIF_DISPOSAL_* constants. */
-    int transparentIndex; /**< Transparent color index, or -1 if not present. */
-    int localColorTable;  /**< Non-zero if this frame has a local color table. */
+    int transparent_index; /**< Transparent color index, or -1 if not present. */
+    int local_color_table; /**< Non-zero if this frame has a local color table. */
     int interlace;        /**< Non-zero if this frame is interlaced. */
 } gdGifFrameInfo;
 
@@ -2176,17 +2174,18 @@ typedef struct gdWebpWrite *gdWebpWritePtr;
 typedef struct {
     int width;           /**< Canvas width in pixels. */
     int height;          /**< Canvas height in pixels. */
-    int frameCount;      /**< Number of frames in the WebP container. */
-    int loopCount;       /**< Animation loop count, or 0 for infinite looping. */
-    int backgroundColor; /**< Canvas background color as stored in the WebP container. */
-    int formatFlags;     /**< WebP container feature flags reported by libwebp. */
+    int frame_count;     /**< Number of frames in the WebP container. */
+    int loop_count;      /**< Animation loop count, or 0 for infinite looping. */
+    int background_color; /**< Canvas background color as stored in the WebP container. */
+    int format_flags;    /**< WebP container feature flags reported by libwebp. */
+    int is_animation;    /**< Non-zero if the WebP container is animated. */
 } gdWebpInfo;
 
 /**
  * @brief WebP animation frame information.
  */
 typedef struct {
-    int frameIndex; /**< Zero-based frame index. */
+    int frame_index; /**< Zero-based frame index. */
     int x;          /**< Frame rectangle X offset in pixels. */
     int y;          /**< Frame rectangle Y offset in pixels. */
     int width;      /**< Frame rectangle width in pixels. */
@@ -2195,7 +2194,7 @@ typedef struct {
     int timestamp;  /**< Frame start timestamp in milliseconds. */
     int dispose;    /**< Disposal method, gdWebpDisposeNone or gdWebpDisposeBackground. */
     int blend;      /**< Blend method, gdWebpBlendAlpha or gdWebpBlendNone. */
-    int hasAlpha;   /**< Non-zero if the frame has alpha. */
+    int has_alpha;  /**< Non-zero if the frame has alpha. */
     int complete;   /**< Non-zero if the frame data is complete. */
 } gdWebpFrameInfo;
 
@@ -2218,17 +2217,17 @@ typedef struct {
  * @brief WebP animation writer options.
  */
 typedef struct {
-    int canvasWidth;     /**< Canvas width in pixels, or 0 to use the first image width. */
-    int canvasHeight;    /**< Canvas height in pixels, or 0 to use the first image height. */
-    int loopCount;       /**< Animation loop count, or 0 for infinite looping. */
-    int backgroundColor; /**< Canvas background color to store in the WebP container. */
+    int canvas_width;     /**< Canvas width in pixels, or 0 to use the first image width. */
+    int canvas_height;    /**< Canvas height in pixels, or 0 to use the first image height. */
+    int loop_count;       /**< Animation loop count, or 0 for infinite looping. */
+    int background_color; /**< Canvas background color to store in the WebP container. */
     int quality;         /**< Encoding quality, -1 for default, 0-100 for lossy, or gdWebpLossless. */
     int lossless;        /**< Non-zero to force lossless encoding. */
     int method;          /**< Compression method, or a negative value to use libwebp default. */
-    int minimizeSize;    /**< Non-zero to enable libwebp minimized-size animation encoding. */
+    int minimize_size;    /**< Non-zero to enable libwebp minimized-size animation encoding. */
     int kmin;            /**< Minimum distance between key frames, or 0 for libwebp default. */
     int kmax;            /**< Maximum distance between key frames, or 0 for libwebp default. */
-    int allowMixed;      /**< Non-zero to allow mixed lossy and lossless frames. */
+    int allow_mixed;      /**< Non-zero to allow mixed lossy and lossless frames. */
 } gdWebpAnimWriteOptions;
 
 /**
@@ -2704,7 +2703,6 @@ typedef struct {
     const gdImageMetadata *metadata;      /**< Optional EXIF/XMP metadata. */
 } gdJxlWriteOptions;
 
-
 BGD_DECLARE(void) gdJxlWriteOptionsInit(gdJxlWriteOptions *options);
 
 BGD_DECLARE(int)
@@ -2786,12 +2784,12 @@ typedef struct {
  * @brief JPEG XL animation writer options.
  */
 typedef struct {
-    int canvasWidth;    /**< Canvas width in pixels, or 0 to use the first image width. */
-    int canvasHeight;   /**< Canvas height in pixels, or 0 to use the first image height. */
+    int canvas_width;    /**< Canvas width in pixels, or 0 to use the first image width. */
+    int canvas_height;   /**< Canvas height in pixels, or 0 to use the first image height. */
     int lossless;       /**< Non-zero to use lossless JPEG XL encoding. */
     float distance;     /**< Lossy encoding distance when lossless is zero. */
     int effort;         /**< Encoder effort setting. */
-    int loopCount;      /**< Animation loop count, or 0 for infinite looping. */
+    int loop_count;      /**< Animation loop count, or 0 for infinite looping. */
 } gdJxlAnimWriteOptions;
 
 /**
@@ -3716,35 +3714,35 @@ typedef struct {
  * @brief TIFF file information from the first page and container.
  */
 typedef struct {
-    int width;            /**< First page width in pixels. */
-    int height;           /**< First page height in pixels. */
-    int pageCount;        /**< Number of TIFF directories/pages in the file. */
-    int bitsPerSample;    /**< First page bits per sample. */
-    int samplesPerPixel;  /**< First page samples per pixel. */
-    int compression;      /**< First page compression tag value, usually a GD_TIFF_COMPRESSION_* enum value. */
-    int photometric;      /**< First page photometric tag value, usually a GD_TIFF_PHOTOMETRIC_* enum value. */
-    float xResolution;    /**< First page horizontal resolution. */
-    float yResolution;    /**< First page vertical resolution. */
-    int resolutionUnit;   /**< First page resolution unit, one of the GD_TIFF_RESUNIT_* enum values. */
+    int width;              /**< First page width in pixels. */
+    int height;             /**< First page height in pixels. */
+    int page_count;         /**< Number of TIFF directories/pages in the file. */
+    int bits_per_sample;    /**< First page bits per sample. */
+    int samples_per_pixel;  /**< First page samples per pixel. */
+    int compression;        /**< First page compression tag value, usually a GD_TIFF_COMPRESSION_* enum value. */
+    int photometric;        /**< First page photometric tag value, usually a GD_TIFF_PHOTOMETRIC_* enum value. */
+    float x_resolution;     /**< First page horizontal resolution. */
+    float y_resolution;     /**< First page vertical resolution. */
+    int resolution_unit;    /**< First page resolution unit, one of the GD_TIFF_RESUNIT_* enum values. */
 } gdTiffInfo;
 
 /**
  * @brief TIFF page information returned while reading pages.
  */
 typedef struct {
-    int pageIndex;        /**< Zero-based page index. */
-    int width;            /**< Page width in pixels. */
-    int height;           /**< Page height in pixels. */
-    int bitsPerSample;    /**< Page bits per sample. */
-    int samplesPerPixel;  /**< Page samples per pixel. */
-    int compression;      /**< Page compression tag value, usually a GD_TIFF_COMPRESSION_* enum value. */
-    int photometric;      /**< Page photometric tag value, usually a GD_TIFF_PHOTOMETRIC_* enum value. */
-    int planar;           /**< Page planar configuration, one of the GD_TIFF_PLANARCONFIG_* enum values. */
-    int hasAlpha;         /**< Non-zero if the page has extra alpha samples. */
-    int isTiled;          /**< Non-zero if the page is stored as TIFF tiles. */
-    float xResolution;    /**< Page horizontal resolution. */
-    float yResolution;    /**< Page vertical resolution. */
-    int resolutionUnit;   /**< Page resolution unit, one of the GD_TIFF_RESUNIT_* enum values. */
+    int page_index;         /**< Zero-based page index. */
+    int width;              /**< Page width in pixels. */
+    int height;             /**< Page height in pixels. */
+    int bits_per_sample;    /**< Page bits per sample. */
+    int samples_per_pixel;  /**< Page samples per pixel. */
+    int compression;        /**< Page compression tag value, usually a GD_TIFF_COMPRESSION_* enum value. */
+    int photometric;        /**< Page photometric tag value, usually a GD_TIFF_PHOTOMETRIC_* enum value. */
+    int planar;             /**< Page planar configuration, one of the GD_TIFF_PLANARCONFIG_* enum values. */
+    int has_alpha;          /**< Non-zero if the page has extra alpha samples. */
+    int is_tiled;           /**< Non-zero if the page is stored as TIFF tiles. */
+    float x_resolution;     /**< Page horizontal resolution. */
+    float y_resolution;     /**< Page vertical resolution. */
+    int resolution_unit;    /**< Page resolution unit, one of the GD_TIFF_RESUNIT_* enum values. */
 } gdTiffPageInfo;
 
 /** @} */
@@ -4278,9 +4276,6 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromBmpCtx(gdIOCtxPtr infile);
 
 /** Descriptive facts read from a BMP file header. */
 typedef struct {
-	int file_size; /**< Size of the BMP file in bytes. */
-	int pixel_offset; /**< Offset to the pixel data in the BMP file. */
-	int header_size; /**< Size of the BMP header in bytes. */
 	int header_type; /**< Type of the BMP header. */
 	int width; /**< Image width in pixels. */
 	int height; /**< Image height in pixels. */
@@ -6000,7 +5995,6 @@ BGD_DECLARE(void) gdImageColorDeallocate(gdImagePtr im, int color);
  * @return 0 on success, or -1 on failure.
  */
 BGD_DECLARE(int) gdImageColorMatch(gdImagePtr im1, gdImagePtr im2);
-
 
 /**
  * @brief Sets the transparent color of the image

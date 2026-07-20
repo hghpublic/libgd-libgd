@@ -209,18 +209,18 @@ static void test_multipage_rgb_ptr(void) {
 	}
 
 	gdTestAssert(gdTiffReadGetInfo(reader, &info) == 1);
-	gdTestAssertMsg(info.pageCount == 2, "expected 2 pages, got %d",
-					info.pageCount);
+	gdTestAssertMsg(info.page_count == 2, "expected 2 pages, got %d",
+					info.page_count);
 	gdTestAssertMsg(info.width == 7 && info.height == 5,
 					"unexpected first page dimensions");
-	gdTestAssertMsg(info.xResolution == 123.0f && info.yResolution == 234.0f,
+	gdTestAssertMsg(info.x_resolution == 123.0f && info.y_resolution == 234.0f,
 					"unexpected first page resolution %.2f x %.2f",
-					info.xResolution, info.yResolution);
+					info.x_resolution, info.y_resolution);
 
 	gdTestAssert(gdTiffReadNextImage(reader, &page, &im0) == 1);
-	gdTestAssertMsg(page.pageIndex == 0 && page.width == 7 && page.height == 5,
+	gdTestAssertMsg(page.page_index == 0 && page.width == 7 && page.height == 5,
 					"unexpected page 0 info");
-	gdTestAssertMsg(page.bitsPerSample == 8 && page.samplesPerPixel == 3,
+	gdTestAssertMsg(page.bits_per_sample == 8 && page.samples_per_pixel == 3,
 					"unexpected page 0 sample layout");
 	gdTestAssertMsg(page.compression == COMPRESSION_NONE &&
 						page.photometric == PHOTOMETRIC_RGB,
@@ -231,7 +231,7 @@ static void test_multipage_rgb_ptr(void) {
 	}
 
 	gdTestAssert(gdTiffReadNextImage(reader, &page, &im1) == 1);
-	gdTestAssertMsg(page.pageIndex == 1 && page.width == 3 && page.height == 4,
+	gdTestAssertMsg(page.page_index == 1 && page.width == 3 && page.height == 4,
 					"unexpected page 1 info");
 	if (im1 != NULL) {
 		assert_pixel_rgb(im1, 0, 0, 0, 128, 255);
@@ -291,14 +291,14 @@ static void test_options_and_formats(void) {
 			gdTestAssert(reader != NULL);
 			if (reader != NULL) {
 				gdTestAssert(gdTiffReadNextImage(reader, &page, &im) == 1);
-				gdTestAssertMsg(page.bitsPerSample == 16 &&
-									page.samplesPerPixel == 1,
+				gdTestAssertMsg(page.bits_per_sample == 16 &&
+									page.samples_per_pixel == 1,
 								"unexpected 16-bit gray layout");
 				gdTestAssertMsg(page.photometric == PHOTOMETRIC_MINISBLACK,
 								"unexpected gray photometric");
-				gdTestAssertMsg(page.resolutionUnit == RESUNIT_CENTIMETER,
+				gdTestAssertMsg(page.resolution_unit == RESUNIT_CENTIMETER,
 								"unexpected resolution unit %d",
-								page.resolutionUnit);
+								page.resolution_unit);
 				if (im != NULL)
 					gdImageDestroy(im);
 				gdTiffReadClose(reader);
@@ -324,8 +324,8 @@ static void test_options_and_formats(void) {
 			gdTestAssert(reader != NULL);
 			if (reader != NULL) {
 				gdTestAssert(gdTiffReadNextImage(reader, &page, &im) == 1);
-				gdTestAssertMsg(page.bitsPerSample == 1 &&
-									page.samplesPerPixel == 1,
+				gdTestAssertMsg(page.bits_per_sample == 1 &&
+									page.samples_per_pixel == 1,
 								"unexpected bilevel layout");
 				gdTestAssertMsg(page.compression == COMPRESSION_CCITTFAX4,
 								"unexpected bilevel compression");
@@ -667,8 +667,8 @@ static void test_compression_matrix(void) {
 		gdTestAssert(reader != NULL);
 		if (reader != NULL) {
 			gdTestAssert(gdTiffReadNextImage(reader, &page, &im) == 1);
-			gdTestAssertMsg(page.bitsPerSample == 1 &&
-								page.samplesPerPixel == 1,
+			gdTestAssertMsg(page.bits_per_sample == 1 &&
+								page.samples_per_pixel == 1,
 							"unexpected CCITT sample layout");
 			gdTestAssertMsg(page.compression == (int)opts.compression,
 							"unexpected CCITT compression tag %d",
@@ -727,11 +727,11 @@ static void test_writer_entry_points_and_validation(void) {
 					int pages = 0;
 
 					gdTestAssert(gdTiffReadGetInfo(reader, &info) == 1);
-					gdTestAssertMsg(info.pageCount == 2,
+					gdTestAssertMsg(info.page_count == 2,
 									"FILE writer should create 2 pages, got %d",
-									info.pageCount);
+									info.page_count);
 					while (gdTiffReadNextImage(reader, &page, &dst) == 1) {
-						gdTestAssertMsg(page.pageIndex == pages,
+						gdTestAssertMsg(page.page_index == pages,
 										"unexpected FILE writer page index");
 						if (dst != NULL) {
 							assert_pixel_rgb(dst, 0, 0, 12, 34, 56);

@@ -173,17 +173,17 @@ static int read_all_frames(const gif_case_t *testCase) {
 						info.height == testCase->height,
 					"%s canvas mismatch: got %dx%d expected %dx%d", path,
 					info.width, info.height, testCase->width, testCase->height);
-	gdTestAssertMsg(info.loopCount == testCase->loopCount,
+	gdTestAssertMsg(info.loop_count == testCase->loopCount,
 					"%s loop mismatch: got %d expected %d", path,
-					info.loopCount, testCase->loopCount);
+					info.loop_count, testCase->loopCount);
 
 	while ((result = gdGifReadNextImage(gif, &frameInfo, &im)) == 1) {
 		gdTestAssertMsg(im != NULL, "%s returned NULL composited frame", path);
 		gdTestAssertMsg(im->sx == testCase->width && im->sy == testCase->height,
 						"%s frame %d image size mismatch", path, frames);
-		gdTestAssertMsg(frameInfo.frameIndex == frames,
+		gdTestAssertMsg(frameInfo.frame_index == frames,
 						"%s frame index mismatch: got %d expected %d", path,
-						frameInfo.frameIndex, frames);
+						frameInfo.frame_index, frames);
 		totalDelay += frameInfo.delay;
 		check_pixels(testCase->file, frames, im);
 		frames++;

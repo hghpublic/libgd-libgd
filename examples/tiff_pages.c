@@ -76,7 +76,7 @@ int main(int argc, char **argv)
     if (gdTiffReadGetInfo(tiff, &info)) {
         printf("first page: %dx%d, pages: %d, bits/sample: %d, samples/pixel: "
                "%d, compression: %d, photometric: %d\n",
-               info.width, info.height, info.pageCount, info.bitsPerSample, info.samplesPerPixel,
+               info.width, info.height, info.page_count, info.bits_per_sample, info.samples_per_pixel,
                info.compression, info.photometric);
     }
 
@@ -84,10 +84,10 @@ int main(int argc, char **argv)
         printf("page %d: %dx%d bits/sample=%d samples/pixel=%d compression=%d "
                "photometric=%d planar=%d alpha=%d tiled=%d "
                "resolution=%.2fx%.2f unit=%d\n",
-               pageInfo.pageIndex, pageInfo.width, pageInfo.height, pageInfo.bitsPerSample,
-               pageInfo.samplesPerPixel, pageInfo.compression, pageInfo.photometric,
-               pageInfo.planar, pageInfo.hasAlpha, pageInfo.isTiled, pageInfo.xResolution,
-               pageInfo.yResolution, pageInfo.resolutionUnit);
+               pageInfo.page_index, pageInfo.width, pageInfo.height, pageInfo.bits_per_sample,
+               pageInfo.samples_per_pixel, pageInfo.compression, pageInfo.photometric,
+               pageInfo.planar, pageInfo.has_alpha, pageInfo.is_tiled, pageInfo.x_resolution,
+               pageInfo.y_resolution, pageInfo.resolution_unit);
 
         if (!write_png(image, argv[2], pageCount)) {
             gdImageDestroy(image);

@@ -24,13 +24,13 @@ static void test_two_ifds_fixture(void) {
 	}
 
 	gdTestAssert(gdTiffReadGetInfo(reader, &info) == 1);
-	gdTestAssertMsg(info.pageCount == 2, "expected 2 pages, got %d",
-					info.pageCount);
+	gdTestAssertMsg(info.page_count == 2, "expected 2 pages, got %d",
+					info.page_count);
 
 	while (gdTiffReadNextImage(reader, &page, &im) == 1) {
-		gdTestAssertMsg(page.pageIndex == pages,
+		gdTestAssertMsg(page.page_index == pages,
 						"expected page index %d, got %d", pages,
-						page.pageIndex);
+						page.page_index);
 		gdTestAssertMsg(im != NULL, "page %d decoded to NULL image", pages);
 		if (im != NULL) {
 			gdTestAssertMsg(

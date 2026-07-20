@@ -42,9 +42,9 @@ int main() {
 	int size = 0;
 
 	gdWebpAnimWriteOptionsInit(&options);
-	options.canvasWidth = 4;
-	options.canvasHeight = 4;
-	options.loopCount = 3;
+	options.canvas_width = 4;
+	options.canvas_height = 4;
+	options.loop_count = 3;
 	options.quality = gdWebpLossless;
 
 	red = make_frame(gdTrueColorAlpha(255, 0, 0, gdAlphaOpaque));
@@ -69,11 +69,11 @@ int main() {
 	gdTestAssert(gdWebpReadGetInfo(reader, &info));
 	gdTestAssert(info.width == 4);
 	gdTestAssert(info.height == 4);
-	gdTestAssert(info.frameCount == 2);
-	gdTestAssert(info.loopCount == 3);
+	gdTestAssert(info.frame_count == 2);
+	gdTestAssert(info.loop_count == 3);
 
 	gdTestAssert(gdWebpReadNextFrame(reader, &frameInfo, &frame0) == 1);
-	gdTestAssert(frameInfo.frameIndex == 0);
+	gdTestAssert(frameInfo.frame_index == 0);
 	gdTestAssert(frameInfo.duration == 120);
 	gdTestAssert(frame0 != NULL);
 	if (frame0 != NULL) {
@@ -82,7 +82,7 @@ int main() {
 		assert_pixel_rgb(frame0, 0, 0, 255, 0, 0);
 	}
 	gdTestAssert(gdWebpReadNextFrame(reader, &frameInfo, &frame1) == 1);
-	gdTestAssert(frameInfo.frameIndex == 1);
+	gdTestAssert(frameInfo.frame_index == 1);
 	gdTestAssert(frameInfo.duration == 80);
 	gdTestAssert(frame1 != NULL);
 	if (frame1 != NULL) {
@@ -101,12 +101,12 @@ int main() {
 	reader = gdWebpReadOpenPtr(size, data, NULL);
 	gdTestAssert(reader != NULL);
 	gdTestAssert(gdWebpReadNextImage(reader, &frameInfo, &image0) == 1);
-	gdTestAssert(frameInfo.frameIndex == 0);
+	gdTestAssert(frameInfo.frame_index == 0);
 	if (image0 != NULL) {
 		assert_pixel_rgb(image0, 0, 0, 255, 0, 0);
 	}
 	gdTestAssert(gdWebpReadNextImage(reader, &frameInfo, &image1) == 1);
-	gdTestAssert(frameInfo.frameIndex == 1);
+	gdTestAssert(frameInfo.frame_index == 1);
 	if (image1 != NULL) {
 		assert_pixel_rgb(image1, 0, 0, 0, 0, 255);
 	}

@@ -153,9 +153,6 @@ static int bmp_get_info_ctx(gdIOCtxPtr infile, gdBmpInfo *result)
     }
 
     gdBmpInfoInit(result);
-    result->file_size = hdr.size;
-    result->pixel_offset = hdr.off;
-    result->header_size = info.len;
     result->header_type = info.len == BMP_OS2_V1 || info.len == BMP_OS2_V2_SHORT || info.len == BMP_OS2_V2 ? 2 : 1;
     result->width = info.width;
     result->height = info.height;

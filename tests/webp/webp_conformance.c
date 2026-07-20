@@ -87,7 +87,7 @@ static void assert_animation_iterator(const char *path, int size,
 					"cannot read WebP animation info: %s\n", path);
 	gdTestAssertMsg(info.width > 0 && info.height > 0,
 					"invalid WebP canvas dimensions: %s\n", path);
-	gdTestAssertMsg(info.frameCount > 0, "invalid WebP frame count: %s\n",
+	gdTestAssertMsg(info.frame_count > 0, "invalid WebP frame count: %s\n",
 					path);
 	while ((result = gdWebpReadNextImage(webp, &frameInfo, &image)) == 1) {
 		gdTestAssertMsg(image != NULL,
@@ -108,9 +108,9 @@ static void assert_animation_iterator(const char *path, int size,
 	}
 	gdTestAssertMsg(result == 0,
 					"WebP animation iterator failed before EOF: %s\n", path);
-	gdTestAssertMsg(frames == info.frameCount,
+	gdTestAssertMsg(frames == info.frame_count,
 					"WebP animation yielded %d frames, expected %d: %s\n",
-					frames, info.frameCount, path);
+					frames, info.frame_count, path);
 	gdWebpReadClose(webp);
 }
 

@@ -70,15 +70,15 @@ int main(int argc, char **argv)
 
     if (gdGifReadGetInfo(gif, &gifInfo)) {
         printf("canvas: %dx%d, background index: %d, loop count: %d\n", gifInfo.width,
-               gifInfo.height, gifInfo.backgroundIndex, gifInfo.loopCount);
+               gifInfo.height, gifInfo.background_index, gifInfo.loop_count);
     }
 
     while (gdGifReadNextImage(gif, &frameInfo, &frameImage) == 1) {
         printf("frame %d: rect=%d,%d %dx%d delay=%dcs disposal=%d "
                "transparent=%d local-palette=%d interlace=%d\n",
-               frameInfo.frameIndex, frameInfo.x, frameInfo.y, frameInfo.width, frameInfo.height,
-               frameInfo.delay, frameInfo.disposal, frameInfo.transparentIndex,
-               frameInfo.localColorTable, frameInfo.interlace);
+               frameInfo.frame_index, frameInfo.x, frameInfo.y, frameInfo.width, frameInfo.height,
+               frameInfo.delay, frameInfo.disposal, frameInfo.transparent_index,
+               frameInfo.local_color_table, frameInfo.interlace);
 
         if (!write_png(frameImage, argv[2], frameCount)) {
             gdImageDestroy(frameImage);

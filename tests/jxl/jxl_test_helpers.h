@@ -65,7 +65,7 @@ static inline void *jxlTestEncodeAnimationWithLoop(gdImagePtr first, int first_d
 	gdJxlAnimWriteOptionsInit(&options);
 	options.lossless = lossless;
 	options.distance = lossless ? 0.0f : 1.0f;
-	options.loopCount = loop_count;
+	options.loop_count = loop_count;
 	writer = gdJxlWriteOpenPtr(&options);
 	if (writer == NULL) {
 		return NULL;

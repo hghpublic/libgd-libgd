@@ -463,7 +463,7 @@ static void GifApplyPreviousDisposal(gdGifRead *gif)
     }
 
     if (info->disposal == gdDisposalRestoreBackground) {
-        bg = GifBackgroundColor(gif, info->transparentIndex);
+        bg = GifBackgroundColor(gif, info->transparent_index);
         for (y = info->y; y < info->y + info->height; y++) {
             for (x = info->x; x < info->x + info->width; x++) {
                 gdImageSetPixel(gif->canvas, x, y, bg);
@@ -488,7 +488,7 @@ static int GifCompositeFrame(gdGifRead *gif, gdImagePtr rawFrame)
     gdGifFrameInfo *info = &gif->lastInfo;
     int x, y, c;
 
-    if (!GifEnsureCanvas(gif, info->transparentIndex)) {
+    if (!GifEnsureCanvas(gif, info->transparent_index)) {
         return 0;
     }
 
@@ -502,7 +502,7 @@ static int GifCompositeFrame(gdGifRead *gif, gdImagePtr rawFrame)
     for (y = 0; y < info->height; y++) {
         for (x = 0; x < info->width; x++) {
             c = gdImageGetPixel(rawFrame, x, y);
-            if (c == info->transparentIndex) {
+            if (c == info->transparent_index) {
                 continue;
             }
             gdImageSetPixel(gif->canvas, info->x + x, info->y + y,
@@ -722,12 +722,12 @@ BGD_DECLARE(int) gdGifReadGetInfo(gdGifReadPtr gif, gdGifInfo *info)
     memcpy(info->version, gif->version, sizeof(info->version));
     info->width = gif->screenWidth;
     info->height = gif->screenHeight;
-    info->backgroundIndex = gif->backgroundIndex;
-    info->globalColorTable = gif->haveGlobalColormap;
-    info->colorResolution = gif->colorResolution;
-    info->pixelAspectRatio = gif->pixelAspectRatio;
-    info->loopCount = gif->loopCount;
-    info->loopCountPresent = gif->loopCountPresent;
+    info->background_index = gif->backgroundIndex;
+    info->global_color_table = gif->haveGlobalColormap;
+    info->color_resolution = gif->colorResolution;
+    info->pixel_aspect_ratio = gif->pixelAspectRatio;
+    info->loop_count = gif->loopCount;
+    info->loop_count_present = gif->loopCountPresent;
     return 1;
 }
 
@@ -892,15 +892,15 @@ gdGifReadNextFrame(gdGifReadPtr gif, gdGifFrameInfo *info, gdImagePtr *frame)
             return -1;
         }
 
-        gif->lastInfo.frameIndex = gif->frameIndex;
+        gif->lastInfo.frame_index = gif->frameIndex;
         gif->lastInfo.x = left;
         gif->lastInfo.y = top;
         gif->lastInfo.width = width;
         gif->lastInfo.height = height;
         gif->lastInfo.delay = gif->gce.delay;
         gif->lastInfo.disposal = gif->gce.disposal;
-        gif->lastInfo.transparentIndex = gif->gce.transparent;
-        gif->lastInfo.localColorTable = hasLocal;
+        gif->lastInfo.transparent_index = gif->gce.transparent;
+        gif->lastInfo.local_color_table = hasLocal;
         gif->lastInfo.interlace = interlace;
         gif->frameIndex++;
         GifFillFrameInfo(gif, info);

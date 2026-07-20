@@ -816,8 +816,8 @@ static int JxlWriteEnsureEncoder(gdJxlWrite *writer, gdImagePtr image)
     }
 
     options = &writer->options;
-    width = options->canvasWidth > 0 ? options->canvasWidth : gdImageSX(image);
-    height = options->canvasHeight > 0 ? options->canvasHeight : gdImageSY(image);
+    width = options->canvas_width > 0 ? options->canvas_width : gdImageSX(image);
+    height = options->canvas_height > 0 ? options->canvas_height : gdImageSY(image);
     if (width <= 0 || height <= 0) {
         gd_error("gd-jxl write: invalid canvas size");
         return 0;
@@ -846,7 +846,7 @@ static int JxlWriteEnsureEncoder(gdJxlWrite *writer, gdImagePtr image)
     info.have_animation = JXL_TRUE;
     info.animation.tps_numerator = 1000; /* ms == ticks */
     info.animation.tps_denominator = 1;
-    info.animation.num_loops = (uint32_t)options->loopCount;
+    info.animation.num_loops = (uint32_t)options->loop_count;
 
     if (JxlEncoderSetBasicInfo(writer->enc, &info) != JXL_ENC_SUCCESS) {
         gd_error("gd-jxl write: JxlEncoderSetBasicInfo failed");

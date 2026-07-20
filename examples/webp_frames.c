@@ -49,13 +49,13 @@ int main(int argc, char **argv)
     }
     if (gdWebpReadGetInfo(webp, &info)) {
         printf("canvas: %dx%d, frames: %d, loop count: %d\n", info.width, info.height,
-               info.frameCount, info.loopCount);
+               info.frame_count, info.loop_count);
     }
     while (gdWebpReadNextImage(webp, &frameInfo, &image) == 1) {
         printf("frame %d: rect=%d,%d %dx%d duration=%dms dispose=%d blend=%d "
                "alpha=%d\n",
-               frameInfo.frameIndex, frameInfo.x, frameInfo.y, frameInfo.width, frameInfo.height,
-               frameInfo.duration, frameInfo.dispose, frameInfo.blend, frameInfo.hasAlpha);
+               frameInfo.frame_index, frameInfo.x, frameInfo.y, frameInfo.width, frameInfo.height,
+               frameInfo.duration, frameInfo.dispose, frameInfo.blend, frameInfo.has_alpha);
         if (!write_png(image, argv[2], frameCount++)) {
             gdImageDestroy(image);
             gdWebpReadClose(webp);

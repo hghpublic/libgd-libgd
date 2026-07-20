@@ -1431,14 +1431,14 @@ static void TiffFillInfo(TIFF *tif, gdTiffInfo *info, int pageCount)
         return;
     }
     memset(info, 0, sizeof(*info));
-    info->pageCount = pageCount;
+    info->page_count = pageCount;
 
     TIFFGetFieldDefaulted(tif, TIFFTAG_IMAGEWIDTH, (uint32_t *)&info->width);
     TIFFGetFieldDefaulted(tif, TIFFTAG_IMAGELENGTH, (uint32_t *)&info->height);
     TIFFGetFieldDefaulted(tif, TIFFTAG_BITSPERSAMPLE, &bps);
     TIFFGetFieldDefaulted(tif, TIFFTAG_SAMPLESPERPIXEL, &spp);
-    info->bitsPerSample = bps;
-    info->samplesPerPixel = spp;
+    info->bits_per_sample = bps;
+    info->samples_per_pixel = spp;
 
     if (TIFFGetField(tif, TIFFTAG_COMPRESSION, &compression)) {
         info->compression = compression;
@@ -1447,15 +1447,15 @@ static void TiffFillInfo(TIFF *tif, gdTiffInfo *info, int pageCount)
         info->photometric = photometric;
     }
     if (TIFFGetField(tif, TIFFTAG_XRESOLUTION, &res_float)) {
-        info->xResolution = res_float;
+        info->x_resolution = res_float;
     }
     if (TIFFGetField(tif, TIFFTAG_YRESOLUTION, &res_float)) {
-        info->yResolution = res_float;
+        info->y_resolution = res_float;
     }
     if (TIFFGetField(tif, TIFFTAG_RESOLUTIONUNIT, &resUnit)) {
-        info->resolutionUnit = resUnit;
+        info->resolution_unit = resUnit;
     } else {
-        info->resolutionUnit = GD_TIFF_RESUNIT_INCH;
+        info->resolution_unit = GD_TIFF_RESUNIT_INCH;
     }
 }
 
@@ -1470,15 +1470,15 @@ static void TiffFillPageInfo(TIFF *tif, gdTiffPageInfo *info, int pageIndex)
         return;
     }
     memset(info, 0, sizeof(*info));
-    info->pageIndex = pageIndex;
+    info->page_index = pageIndex;
 
     TIFFGetFieldDefaulted(tif, TIFFTAG_IMAGEWIDTH, (uint32_t *)&info->width);
     TIFFGetFieldDefaulted(tif, TIFFTAG_IMAGELENGTH, (uint32_t *)&info->height);
     TIFFGetFieldDefaulted(tif, TIFFTAG_BITSPERSAMPLE, &bps);
     TIFFGetFieldDefaulted(tif, TIFFTAG_SAMPLESPERPIXEL, &spp);
-    info->bitsPerSample = bps;
-    info->samplesPerPixel = spp;
-    info->isTiled = TIFFIsTiled(tif);
+    info->bits_per_sample = bps;
+    info->samples_per_pixel = spp;
+    info->is_tiled = TIFFIsTiled(tif);
 
     if (TIFFGetField(tif, TIFFTAG_COMPRESSION, &compression)) {
         info->compression = compression;
@@ -1495,18 +1495,18 @@ static void TiffFillPageInfo(TIFF *tif, gdTiffPageInfo *info, int pageIndex)
     if (!TIFFGetField(tif, TIFFTAG_EXTRASAMPLES, &extra, &extra_types)) {
         extra = 0;
     }
-    info->hasAlpha = (extra > 0);
+    info->has_alpha = (extra > 0);
 
     if (TIFFGetField(tif, TIFFTAG_XRESOLUTION, &res_float)) {
-        info->xResolution = res_float;
+        info->x_resolution = res_float;
     }
     if (TIFFGetField(tif, TIFFTAG_YRESOLUTION, &res_float)) {
-        info->yResolution = res_float;
+        info->y_resolution = res_float;
     }
     if (TIFFGetField(tif, TIFFTAG_RESOLUTIONUNIT, &resUnit)) {
-        info->resolutionUnit = resUnit;
+        info->resolution_unit = resUnit;
     } else {
-        info->resolutionUnit = GD_TIFF_RESUNIT_INCH;
+        info->resolution_unit = GD_TIFF_RESUNIT_INCH;
     }
 }
 

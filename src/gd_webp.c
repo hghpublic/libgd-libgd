@@ -182,10 +182,11 @@ static void WebpFillInfo(const WebPDemuxer *demux, gdWebpInfo *info)
     }
     info->width = (int)WebPDemuxGetI(demux, WEBP_FF_CANVAS_WIDTH);
     info->height = (int)WebPDemuxGetI(demux, WEBP_FF_CANVAS_HEIGHT);
-    info->frameCount = (int)WebPDemuxGetI(demux, WEBP_FF_FRAME_COUNT);
-    info->loopCount = (int)WebPDemuxGetI(demux, WEBP_FF_LOOP_COUNT);
-    info->backgroundColor = (int)WebPDemuxGetI(demux, WEBP_FF_BACKGROUND_COLOR);
-    info->formatFlags = (int)WebPDemuxGetI(demux, WEBP_FF_FORMAT_FLAGS);
+    info->frame_count = (int)WebPDemuxGetI(demux, WEBP_FF_FRAME_COUNT);
+    info->loop_count = (int)WebPDemuxGetI(demux, WEBP_FF_LOOP_COUNT);
+    info->background_color = (int)WebPDemuxGetI(demux, WEBP_FF_BACKGROUND_COLOR);
+    info->format_flags = (int)WebPDemuxGetI(demux, WEBP_FF_FORMAT_FLAGS);
+    info->is_animation = (info->format_flags & ANIMATION_FLAG) != 0 || info->frame_count > 1;
 }
 
 static void WebpFillFrameInfo(const WebPIterator *iter, int frameIndex, int timestamp,
@@ -194,7 +195,7 @@ static void WebpFillFrameInfo(const WebPIterator *iter, int frameIndex, int time
     if (info == NULL || iter == NULL) {
         return;
     }
-    info->frameIndex = frameIndex;
+    info->frame_index = frameIndex;
     info->x = iter->x_offset;
     info->y = iter->y_offset;
     info->width = iter->width;
@@ -203,7 +204,7 @@ static void WebpFillFrameInfo(const WebPIterator *iter, int frameIndex, int time
     info->timestamp = timestamp;
     info->dispose = iter->dispose_method;
     info->blend = iter->blend_method;
-    info->hasAlpha = iter->has_alpha;
+    info->has_alpha = iter->has_alpha;
     info->complete = iter->complete;
 }
 
@@ -621,7 +622,7 @@ gdWebpReadNextImage(gdWebpReadPtr webp, gdWebpFrameInfo *info, gdImagePtr *image
         WebPDemuxReleaseIterator(&iter);
     } else if (info != NULL) {
         memset(info, 0, sizeof(*info));
-        info->frameIndex = webp->imageIndex;
+        info->frame_index = webp->imageIndex;
         info->width = (int)animInfo.canvas_width;
         info->height = (int)animInfo.canvas_height;
         info->duration = duration;
@@ -967,26 +968,26 @@ static int WebpWriteEnsureEncoder(gdWebpWritePtr webp, gdImagePtr image)
         return 0;
     }
     webp->canvasWidth =
-        webp->options.canvasWidth > 0 ? webp->options.canvasWidth : gdImageSX(image);
+        webp->options.canvas_width > 0 ? webp->options.canvas_width : gdImageSX(image);
     webp->canvasHeight =
-        webp->options.canvasHeight > 0 ? webp->options.canvasHeight : gdImageSY(image);
+        webp->options.canvas_height > 0 ? webp->options.canvas_height : gdImageSY(image);
     if (webp->canvasWidth <= 0 || webp->canvasHeight <= 0) {
         return 0;
     }
     if (!WebPAnimEncoderOptionsInit(&encOptions)) {
         return 0;
     }
-    encOptions.anim_params.loop_count = webp->options.loopCount;
-    encOptions.anim_params.bgcolor = (uint32_t)webp->options.backgroundColor;
-    if (webp->options.minimizeSize) {
-        encOptions.minimize_size = webp->options.minimizeSize;
+    encOptions.anim_params.loop_count = webp->options.loop_count;
+    encOptions.anim_params.bgcolor = (uint32_t)webp->options.background_color;
+    if (webp->options.minimize_size) {
+        encOptions.minimize_size = webp->options.minimize_size;
     }
     if (webp->options.kmin || webp->options.kmax) {
         encOptions.kmin = webp->options.kmin;
         encOptions.kmax = webp->options.kmax;
     }
-    if (webp->options.allowMixed) {
-        encOptions.allow_mixed = webp->options.allowMixed;
+    if (webp->options.allow_mixed) {
+        encOptions.allow_mixed = webp->options.allow_mixed;
     }
     webp->encoder = WebPAnimEncoderNew(webp->canvasWidth, webp->canvasHeight, &encOptions);
     return webp->encoder != NULL;

@@ -86,16 +86,16 @@ int main(int argc, char **argv)
      * byte-for-byte copy: comments, application extensions other than the loop
      * count, and exact LZW coding are not preserved.
      */
-    gdImageGifAnimBegin(screen, out, 0, gifInfo.loopCount);
+    gdImageGifAnimBegin(screen, out, 0, gifInfo.loop_count);
 
     while ((result = gdGifReadNextFrame(gif, &frameInfo, &frame)) == 1) {
         gdImageGifAnimAdd(frame, out, 1, frameInfo.x, frameInfo.y, frameInfo.delay,
                           frameInfo.disposal, NULL);
         printf("frame %d: rect=%d,%d %dx%d delay=%dcs disposal=%d "
                "transparent=%d local-palette=%d\n",
-               frameInfo.frameIndex, frameInfo.x, frameInfo.y, frameInfo.width, frameInfo.height,
-               frameInfo.delay, frameInfo.disposal, frameInfo.transparentIndex,
-               frameInfo.localColorTable);
+               frameInfo.frame_index, frameInfo.x, frameInfo.y, frameInfo.width, frameInfo.height,
+               frameInfo.delay, frameInfo.disposal, frameInfo.transparent_index,
+               frameInfo.local_color_table);
         gdImageDestroy(frame);
         frameCount++;
     }

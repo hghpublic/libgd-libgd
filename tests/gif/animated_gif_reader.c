@@ -62,18 +62,18 @@ static void assert_gif_info(const gdGifInfo *info, int loop_count, int present) 
 					"unexpected GIF version: %s", info->version);
 	gdTestAssertMsg(info->width == 8 && info->height == 8,
 					"unexpected GIF dimensions: %dx%d", info->width, info->height);
-	gdTestAssertMsg(info->backgroundIndex == 0,
-					"unexpected GIF background index: %d", info->backgroundIndex);
-	gdTestAssertMsg(info->globalColorTable != 0,
+	gdTestAssertMsg(info->background_index == 0,
+					"unexpected GIF background index: %d", info->background_index);
+	gdTestAssertMsg(info->global_color_table != 0,
 					"expected a global GIF color table");
-	gdTestAssertMsg(info->colorResolution == 2,
-					"unexpected GIF color resolution: %d", info->colorResolution);
-	gdTestAssertMsg(info->pixelAspectRatio == 1.0,
-					"unexpected GIF pixel aspect ratio: %f", info->pixelAspectRatio);
-	gdTestAssertMsg(info->loopCount == loop_count,
-					"unexpected GIF loop count: %d", info->loopCount);
-	gdTestAssertMsg(info->loopCountPresent == present,
-					"unexpected GIF loop-count presence: %d", info->loopCountPresent);
+	gdTestAssertMsg(info->color_resolution == 2,
+					"unexpected GIF color resolution: %d", info->color_resolution);
+	gdTestAssertMsg(info->pixel_aspect_ratio == 1.0,
+					"unexpected GIF pixel aspect ratio: %f", info->pixel_aspect_ratio);
+	gdTestAssertMsg(info->loop_count == loop_count,
+					"unexpected GIF loop count: %d", info->loop_count);
+	gdTestAssertMsg(info->loop_count_present == present,
+					"unexpected GIF loop-count presence: %d", info->loop_count_present);
 }
 
 static void test_info_apis(void) {
@@ -126,7 +126,7 @@ static void test_info_apis(void) {
 	gdTestAssert(data != NULL);
 	if (data != NULL) {
 		gdTestAssert(gdGifGetInfoPtr(size, data, &info) == 1);
-		gdTestAssertMsg(info.loopCount == 1 && info.loopCountPresent == 0,
+		gdTestAssertMsg(info.loop_count == 1 && info.loop_count_present == 0,
 						"static GIF loop defaults are incorrect");
 		free(data);
 	}
@@ -254,12 +254,12 @@ static void test_raw_iterator(void) {
 	gdTestAssert(gdGifReadGetInfo(gif, &info));
 	gdTestAssertMsg(info.width == 8 && info.height == 8,
 					"unexpected logical screen size");
-	gdTestAssertMsg(info.loopCount == 0,
+	gdTestAssertMsg(info.loop_count == 0,
 					"expected infinite Netscape loop count");
 
 	while (gdGifReadNextFrame(gif, &frameInfo, &frame) == 1) {
 		gdTestAssert(frame != NULL);
-		gdTestAssertMsg(frameInfo.frameIndex == count,
+		gdTestAssertMsg(frameInfo.frame_index == count,
 						"unexpected frame index");
 		gdTestAssertMsg(frameInfo.width == 8 && frameInfo.height == 8,
 						"unexpected frame size");
@@ -298,10 +298,10 @@ static void test_local_color_table(void) {
 	}
 
 	gdTestAssert(gdGifReadNextFrame(gif, &info, &firstFrame) == 1);
-	gdTestAssertMsg(info.localColorTable == 0,
+	gdTestAssertMsg(info.local_color_table == 0,
 					"first frame should use global color table");
 	gdTestAssert(gdGifReadNextFrame(gif, &info, &secondFrame) == 1);
-	gdTestAssertMsg(info.localColorTable == 1,
+	gdTestAssertMsg(info.local_color_table == 1,
 					"second frame should use local color table");
 	if (firstFrame != NULL && secondFrame != NULL) {
 		gdTestAssertMsg(firstFrame->sx == 4 && firstFrame->sy == 4,

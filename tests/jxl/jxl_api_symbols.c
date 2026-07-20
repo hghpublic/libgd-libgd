@@ -24,7 +24,7 @@ int main(void) {
 	gdTestAssert(read_options.coalesced == 1);
 	gdTestAssert(write_options.distance == 1.0f);
 	gdTestAssert(write_options.effort == 7);
-	gdTestAssert(write_options.loopCount == 0);
+	gdTestAssert(write_options.loop_count == 0);
 
 	read_open = gdJxlReadOpen;
 	read_open_ctx = gdJxlReadOpenCtx;

@@ -32,10 +32,10 @@ int main(int argc, char **argv)
     }
 
     gdWebpAnimWriteOptionsInit(&options);
-    options.canvasWidth = info.width;
-    options.canvasHeight = info.height;
-    options.loopCount = info.loopCount;
-    options.backgroundColor = info.backgroundColor;
+    options.canvas_width = info.width;
+    options.canvas_height = info.height;
+    options.loop_count = info.loop_count;
+    options.background_color = info.background_color;
     options.quality = gdWebpLossless;
 
     out = fopen(argv[2], "wb");
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
     while ((result = gdWebpReadNextImage(reader, &frameInfo, &image)) == 1) {
         if (!gdWebpWriteAddImage(writer, image, frameInfo.duration)) {
-            fprintf(stderr, "cannot add frame %d\n", frameInfo.frameIndex);
+            fprintf(stderr, "cannot add frame %d\n", frameInfo.frame_index);
             gdImageDestroy(image);
             gdWebpWriteClose(writer);
             fclose(out);
